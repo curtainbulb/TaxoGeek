@@ -3,680 +3,1147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TaxoGeek — The Canon</title>
+<title>TAXOGEEK — The Canon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #0D0D0D;
-    --paper: #F0EDE6;
-    --card: #151518;
-    --card-hover: #1E1E24;
-    --gold: #C9A84C;
-    --gold-dim: #8a6f2e;
-    --red: #8B2020;
-    --green: #2E6B45;
-    --muted: #4A4A55;
-    --border: #2A2A35;
-    --text: #C8C4BC;
-    --text-dim: #6B6870;
-    --sidebar-w: 280px;
-  }
+/* ── VARIABLES ── */
+:root {
+  --bg:       #0f0f0f;
+  --surface:  #1a1a1a;
+  --card:     #141414;
+  --gold:     #d4a017;
+  --gold-dim: #8a6b1a;
+  --green:    #2d5a27;
+  --red:      #5a1a1a;
+  --text:     #c8c4b4;
+  --dim:      #5a5650;
+  --border:   #2a2a2a;
+  --border-a: #3a3530;
+  --sidebar-w: 268px;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+button { cursor: pointer; font-family: inherit; }
+input, select { font-family: inherit; }
 
-  html { scroll-behavior: smooth; }
+/* ── CURSOR BLINK ── */
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.blink { animation: blink 1s step-end infinite; }
 
-  body {
-    background: var(--ink);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
+/* ── LOADER ── */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; z-index: 9999;
+}
+#loader .logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+#loader .sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0.15em;
+}
+.px-spinner {
+  display: flex; gap: 4px; align-items: center;
+}
+.px-spinner span {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  animation: px-pulse 0.8s ease-in-out infinite;
+}
+.px-spinner span:nth-child(2) { animation-delay: 0.15s; }
+.px-spinner span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes px-pulse { 0%,100%{opacity:0.2} 50%{opacity:1} }
 
-  /* ── LOADING ── */
-  #loader {
-    position: fixed; inset: 0;
-    background: var(--ink);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 999;
-    flex-direction: column;
-    gap: 16px;
-  }
-  #loader .logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-  }
-  #loader .sub {
-    color: var(--text-dim);
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── LAYOUT ── */
+#app { display: flex; min-height: 100vh; }
 
-  /* ── LAYOUT ── */
-  #app { display: flex; min-height: 100vh; }
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: #0a0a0a;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
 
-  /* ── SIDEBAR ── */
-  #sidebar {
-    width: var(--sidebar-w);
-    background: #0A0A0C;
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    overflow-y: auto;
-    z-index: 100;
-    transition: transform 0.3s ease;
-  }
+.sidebar-header {
+  padding: 24px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  line-height: 1.6;
+  word-break: break-all;
+}
+.sidebar-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
 
-  .sidebar-header {
-    padding: 28px 20px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sidebar-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    color: var(--gold);
-    letter-spacing: 0.03em;
-    line-height: 1.2;
-  }
-  .sidebar-sub {
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+/* global stats */
+.global-stats {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.stat-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--gold);
+}
+/* pixel progress bar */
+.px-bar {
+  display: flex; gap: 2px; margin-top: 4px;
+}
+.px-seg {
+  flex: 1; height: 8px;
+  background: var(--border);
+  border: 1px solid var(--border-a);
+}
+.px-seg.filled { background: var(--gold-dim); border-color: var(--gold); }
+.px-bar-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  margin-top: 2px;
+  text-align: right;
+}
 
-  /* Global stats bar */
-  .global-stats {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-  }
-  .stat-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; }
-  .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--gold); }
-  .progress-bar-outer {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-  .progress-bar-inner {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }
+/* sidebar search */
+.sidebar-search {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.search-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  outline: none;
+}
+.search-input:focus { border-color: var(--gold-dim); }
+.search-input::placeholder { color: var(--dim); }
 
-  /* Search */
-  .sidebar-search {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .search-input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 8px 10px;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .search-input:focus { border-color: var(--gold-dim); }
-  .search-input::placeholder { color: var(--text-dim); }
+/* sidebar filter btns */
+.sidebar-filters {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.filter-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 3px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  transition: none;
+}
+.filter-btn:hover, .filter-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 2px 2px 0 var(--gold-dim);
+}
 
-  /* Sidebar filters */
-  .sidebar-filters {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .filter-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 4px 10px;
-    border-radius: 3px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.05em;
-    transition: all 0.15s;
-  }
-  .filter-btn:hover, .filter-btn.active {
-    border-color: var(--gold);
-    color: var(--gold);
-    background: rgba(201,168,76,0.08);
-  }
+/* super-cat tabs in sidebar */
+.super-tabs {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.super-tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 3px 7px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  transition: none;
+}
+.super-tab:hover { color: var(--text); border-color: var(--border-a); }
+.super-tab.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 2px 2px 0 var(--gold-dim);
+}
 
-  /* Category nav */
-  .cat-nav { padding: 8px 0 20px; flex: 1; }
-  .cat-nav-item {
-    display: block;
-    padding: 6px 20px;
-    color: var(--text-dim);
-    font-size: 12px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-    transition: all 0.15s;
-    line-height: 1.4;
-  }
-  .cat-nav-item:hover {
-    color: var(--text);
-    border-left-color: var(--gold-dim);
-    background: rgba(255,255,255,0.02);
-  }
-  .cat-nav-item.active {
-    color: var(--gold);
-    border-left-color: var(--gold);
-  }
-  .cat-nav-group {
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 12px 20px 4px;
-    opacity: 0.6;
-  }
+/* cat nav */
+.cat-nav { padding: 4px 0 20px; flex: 1; overflow-y: auto; }
+.cat-nav-group {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 10px 16px 3px;
+  opacity: 0.7;
+}
+.cat-nav-item {
+  display: block;
+  padding: 4px 16px;
+  color: var(--dim);
+  font-size: 11px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  line-height: 1.4;
+  transition: none;
+}
+.cat-nav-item:hover {
+  color: var(--text);
+  border-left-color: var(--gold-dim);
+  background: rgba(212,160,23,0.04);
+}
+.cat-nav-item.active {
+  color: var(--gold);
+  border-left-color: var(--gold);
+}
 
-  /* ── MAIN ── */
-  #main {
-    margin-left: var(--sidebar-w);
-    flex: 1;
-    padding: 0;
-  }
+/* ── MAIN ── */
+#main { margin-left: var(--sidebar-w); flex: 1; }
 
-  /* Top bar */
-  #topbar {
-    background: rgba(10,10,12,0.95);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 40px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    flex-wrap: wrap;
-  }
-  .view-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 5px 14px;
-    border-radius: 3px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    letter-spacing: 0.05em;
-    transition: all 0.15s;
-  }
-  .view-btn:hover, .view-btn.active {
-    border-color: var(--gold);
-    color: var(--gold);
-    background: rgba(201,168,76,0.08);
-  }
-  .topbar-info {
-    margin-left: auto;
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'JetBrains Mono', monospace;
-  }
+/* Topbar */
+#topbar {
+  background: rgba(10,10,10,0.96);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0; z-index: 50;
+  flex-wrap: wrap;
+}
+.view-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  transition: none;
+}
+.view-btn:hover, .view-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 2px 2px 0 var(--gold-dim);
+}
+.topbar-spacer { flex: 1; }
+.topbar-info {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+}
+.topbar-action {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 4px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+}
+.topbar-action:hover { border-color: var(--gold-dim); color: var(--text); }
 
-  /* ── CONTENT PANELS ── */
-  .panel { display: none; padding: 40px; }
-  .panel.active { display: block; }
+/* ── FILTER BAR ── */
+#filter-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 32px;
+}
+.filter-bar-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.filter-section-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.decade-btns { display: flex; gap: 3px; flex-wrap: wrap; }
+.decade-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 2px 7px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  transition: none;
+}
+.decade-btn:hover { border-color: var(--border-a); color: var(--text); }
+.decade-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 1px 1px 0 var(--gold-dim);
+}
+.sort-select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 3px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  outline: none;
+}
+.sort-select:focus { border-color: var(--gold-dim); }
 
-  /* ── CATEGORY CARD ── */
-  .category-block {
-    margin-bottom: 48px;
-    scroll-margin-top: 80px;
-  }
-  .category-header {
-    border-left: 3px solid var(--gold);
-    padding-left: 16px;
-    margin-bottom: 16px;
-  }
-  .category-super {
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--gold-dim);
-    margin-bottom: 4px;
-  }
-  .category-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    color: var(--paper);
-    line-height: 1.3;
-    font-weight: 600;
-  }
-  .category-desc {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 4px;
-    font-style: italic;
-    line-height: 1.5;
-  }
-  .category-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 10px;
-  }
-  .cat-progress-bar {
-    flex: 1;
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-  .cat-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    border-radius: 1px;
-  }
-  .cat-count {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
+/* Year range slider */
+.range-wrap {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: nowrap;
+}
+.range-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  white-space: nowrap;
+  min-width: 80px;
+}
+.range-slider {
+  -webkit-appearance: none;
+  width: 100px;
+  height: 4px;
+  background: var(--border);
+  outline: none;
+  border: 1px solid var(--border-a);
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: var(--gold);
+  border: 1px solid var(--gold-dim);
+  cursor: pointer;
+}
+.range-slider::-moz-range-thumb {
+  width: 12px; height: 12px;
+  background: var(--gold);
+  border: 1px solid var(--gold-dim);
+  cursor: pointer;
+}
 
-  /* Film list */
-  .film-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 8px;
-  }
-  .film-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 10px 12px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-  }
-  .film-item:hover {
-    background: var(--card-hover);
-    border-color: var(--muted);
-    transform: translateY(-1px);
-  }
-  .film-item.watched {
-    border-color: rgba(46,107,69,0.4);
-  }
-  .film-item.watched .film-title { color: var(--text); }
-  .film-item.site-watched {
-    border-color: rgba(201,168,76,0.3);
-  }
+/* Active filter summary */
+.filter-summary {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  display: flex; align-items: center; gap: 8px;
+}
+.filter-summary-text { color: var(--text); }
+.clear-filters {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 1px 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+}
+.clear-filters:hover { border-color: var(--gold-dim); color: var(--text); }
+#filter-bar-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 4px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  margin-left: 8px;
+}
+#filter-bar-toggle:hover { border-color: var(--border-a); color: var(--text); }
 
-  .film-check {
-    width: 16px;
-    height: 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 2px;
-    flex-shrink: 0;
-    margin-top: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    font-size: 10px;
-  }
-  .film-item.watched .film-check {
-    background: var(--green);
-    border-color: var(--green);
-    color: white;
-  }
-  .film-item.site-watched:not(.watched) .film-check {
-    background: rgba(201,168,76,0.2);
-    border-color: var(--gold-dim);
-    color: var(--gold);
-  }
+/* ── PANELS ── */
+.panel { display: none; padding: 32px; }
+.panel.active { display: block; }
 
-  .film-info { flex: 1; min-width: 0; }
-  .film-title {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.4;
-    word-break: break-word;
-  }
-  .film-year {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    opacity: 0.6;
-    margin-top: 2px;
-  }
-  .film-dupe-badge {
-    font-size: 9px;
-    background: rgba(201,168,76,0.15);
-    color: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 2px;
-    padding: 1px 5px;
-    position: absolute;
-    top: 6px; right: 6px;
-  }
+/* section divider text */
+.px-divider {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+  margin: 24px 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
 
-  /* ── STATS PANEL ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 40px;
-  }
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 20px;
-  }
-  .stat-card-label {
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
-  .stat-card-value {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.2rem;
-    color: var(--gold);
-    line-height: 1;
-  }
-  .stat-card-sub {
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 4px;
-  }
+/* ── CATEGORY BLOCK ── */
+.category-block {
+  margin-bottom: 40px;
+  scroll-margin-top: 100px;
+}
+.cat-header {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: none;
+}
+.cat-header:hover { border-color: var(--border-a); box-shadow: 2px 2px 0 var(--gold-dim); }
+.cat-header-left { flex: 1; min-width: 0; }
+.cat-super {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin-bottom: 2px;
+}
+.cat-name {
+  font-family: 'IM Fell English', serif;
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.3;
+}
+.cat-desc {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 3px;
+  font-style: italic;
+  line-height: 1.4;
+}
+.cat-toggle-icon {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: var(--dim);
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+.cat-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.cat-px-bar {
+  display: flex; gap: 1px;
+}
+.cat-px-seg {
+  width: 10px; height: 6px;
+  background: var(--border);
+  border: 1px solid var(--border-a);
+}
+.cat-px-seg.filled { background: var(--green); border-color: #3d7a36; }
+.cat-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  white-space: nowrap;
+}
 
-  /* Decade heatmap */
-  .heatmap-section { margin-bottom: 40px; }
-  .section-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
-    color: var(--paper);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .decade-grid {
-    display: grid;
-    grid-template-columns: 60px repeat(10, 1fr);
-    gap: 4px;
-    font-size: 11px;
-  }
-  .decade-label {
-    color: var(--text-dim);
-    display: flex;
-    align-items: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-  }
-  .heatmap-cell {
-    aspect-ratio: 1.5;
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    cursor: default;
-    transition: transform 0.1s;
-    position: relative;
-  }
-  .heatmap-cell:hover { transform: scale(1.1); z-index: 1; }
-  .heatmap-col-header {
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding-bottom: 4px;
-  }
+/* film grid */
+.film-grid-wrap { padding: 0; }
+.film-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.film-item {
+  background: var(--card);
+  padding: 9px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  position: relative;
+  cursor: default;
+}
+.film-item:hover {
+  background: #181818;
+  box-shadow: 2px 2px 0 var(--gold-dim);
+  z-index: 1;
+}
+/* CRT scanline on hover */
+.film-item:hover::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+}
+.film-item.watched { background: #111811; }
+.film-item.site-watched { background: #12100a; }
+.film-item.new-film::before {
+  content: 'NEW';
+  position: absolute;
+  top: 4px; right: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--gold);
+  background: var(--card);
+  border: 1px solid var(--gold-dim);
+  padding: 1px 3px;
+}
 
-  /* Category completion list */
-  .cat-completion-list { display: flex; flex-direction: column; gap: 8px; }
-  .cat-completion-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
-  .cat-completion-name { flex: 1; font-size: 13px; color: var(--text); }
-  .cat-completion-bar { flex: 2; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-  .cat-completion-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius: 2px; }
-  .cat-completion-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); width: 36px; text-align: right; }
+/* pixel checkbox */
+.film-check {
+  width: 12px; height: 12px;
+  border: 1px solid var(--dim);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+  font-family: 'IBM Plex Mono', monospace;
+  cursor: pointer;
+  transition: none;
+  user-select: none;
+}
+.film-check:hover { border-color: var(--gold-dim); box-shadow: 1px 1px 0 var(--gold-dim); }
+.film-item.watched .film-check {
+  background: var(--green);
+  border-color: #3d7a36;
+  color: #a0dba0;
+}
+.film-item.site-watched:not(.watched) .film-check {
+  background: rgba(212,160,23,0.15);
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
 
-  /* ── DUPLICATES PANEL ── */
-  .dupe-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--gold-dim);
-    border-radius: 4px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-  }
-  .dupe-title { font-size: 13px; color: var(--paper); margin-bottom: 6px; }
-  .dupe-cats { display: flex; flex-wrap: wrap; gap: 6px; }
-  .dupe-cat-tag {
-    font-size: 10px;
-    background: rgba(201,168,76,0.1);
-    color: var(--gold-dim);
-    border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 2px;
-    padding: 2px 8px;
-  }
+.film-info { flex: 1; min-width: 0; }
+.film-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.4;
+  word-break: break-word;
+  cursor: pointer;
+}
+.film-title:hover { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.film-item.watched .film-title { color: var(--text); }
+.film-year {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  opacity: 0.6;
+  margin-top: 1px;
+}
+.film-note {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  font-style: italic;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+.film-dupe-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  background: rgba(212,160,23,0.1);
+  color: var(--gold-dim);
+  border: 1px solid rgba(212,160,23,0.2);
+  padding: 0 4px;
+  position: absolute;
+  bottom: 4px; right: 4px;
+}
 
-  /* ── DIRECTOR PANEL ── */
-  .director-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    margin-bottom: 32px;
-  }
-  .director-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .director-card:hover {
-    border-color: var(--gold-dim);
-    background: var(--card-hover);
-  }
-  .director-name { font-size: 14px; color: var(--paper); margin-bottom: 4px; }
-  .director-count { font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+/* franchise group */
+.franchise-group {
+  border: 1px solid var(--border-a);
+  margin-bottom: 1px;
+}
+.franchise-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 10px;
+  background: #141410;
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--gold-dim);
+}
+.franchise-ring {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--gold);
+  margin-left: auto;
+}
 
-  /* ── WATCH NEXT PANEL ── */
-  .suggest-controls {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-  }
-  .suggest-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.15s;
-  }
-  .suggest-btn:hover {
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-  .suggestion-result {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--gold);
-    border-radius: 4px;
-    padding: 16px 20px;
-    margin-bottom: 10px;
-  }
-  .suggestion-film { font-size: 1rem; color: var(--paper); font-family: 'Playfair Display', serif; }
-  .suggestion-cat { font-size: 11px; color: var(--gold-dim); margin-top: 4px; }
-  .suggestion-why { font-size: 12px; color: var(--text-dim); margin-top: 6px; font-style: italic; }
+/* ── OMDB MODAL ── */
+#modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#modal-overlay.open { display: flex; }
+#modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-a);
+  width: 100%;
+  max-width: 780px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 2px 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  z-index: 10;
+}
+.modal-close:hover { border-color: var(--gold-dim); color: var(--text); box-shadow: 2px 2px 0 var(--gold-dim); }
+.modal-body { display: flex; gap: 0; }
+.modal-poster {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 16px;
+}
+.modal-poster img { width: 100%; max-width: 208px; display: block; border: 1px solid var(--border); }
+.modal-poster-placeholder {
+  width: 208px; height: 300px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card);
+}
+.modal-poster-placeholder span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--dim);
+  text-align: center;
+  padding: 8px;
+  line-height: 1.8;
+}
+.modal-meta { flex: 1; padding: 20px 24px; min-width: 0; }
+.modal-title {
+  font-family: 'IM Fell English', serif;
+  font-size: 22px;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+  padding-right: 40px;
+}
+.modal-attrs {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-bottom: 10px;
+}
+.modal-genres { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.genre-chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  border: 1px solid var(--border-a);
+  color: var(--dim);
+  padding: 1px 6px;
+  background: var(--card);
+}
+.modal-row {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+.modal-row strong { color: var(--text); }
+.modal-plot {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  margin: 12px 0;
+  line-height: 1.6;
+  border-left: 2px solid var(--gold-dim);
+  padding-left: 10px;
+}
+.modal-rating {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.modal-divider {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  overflow: hidden;
+  white-space: nowrap;
+  margin: 12px 0 8px;
+}
+.modal-cats { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.modal-cat-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: rgba(212,160,23,0.08);
+  color: var(--gold-dim);
+  border: 1px solid rgba(212,160,23,0.15);
+  padding: 2px 7px;
+}
+.modal-watched-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px;
+}
+.modal-watch-btn {
+  background: transparent;
+  border: 1px solid var(--border-a);
+  color: var(--text);
+  padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.modal-watch-btn:hover { border-color: var(--gold); color: var(--gold); box-shadow: 2px 2px 0 var(--gold-dim); }
+.modal-fetching {
+  padding: 40px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  text-align: center;
+  line-height: 2;
+}
+/* OMDb key prompt */
+#omdb-prompt {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1100;
+  align-items: center; justify-content: center;
+}
+#omdb-prompt.open { display: flex; }
+.omdb-prompt-card {
+  background: var(--surface);
+  border: 1px solid var(--border-a);
+  padding: 28px 32px;
+  max-width: 460px;
+  width: 100%;
+}
+.omdb-prompt-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  margin-bottom: 14px;
+  line-height: 1.8;
+}
+.omdb-prompt-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.omdb-key-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border-a);
+  color: var(--text);
+  padding: 7px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  margin-bottom: 12px;
+  outline: none;
+}
+.omdb-key-input:focus { border-color: var(--gold-dim); }
+.omdb-btn-row { display: flex; gap: 8px; }
+.omdb-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.omdb-btn.primary { border-color: var(--gold-dim); color: var(--gold); }
+.omdb-btn:hover { box-shadow: 2px 2px 0 var(--gold-dim); }
 
-  /* Tooltip */
-  .tooltip {
-    position: absolute;
-    background: #1a1a22;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 11px;
-    color: var(--text);
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 200;
-    transform: translateY(-100%) translateY(-6px);
-    left: 50%;
-    transform: translate(-50%, -100%) translateY(-6px);
-  }
+/* ── STATS PANEL ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--card);
+  padding: 18px 16px;
+}
+.stat-card-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+.stat-card-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2rem;
+  color: var(--gold);
+  line-height: 1;
+}
+.stat-card-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 4px;
+}
+.section-title {
+  font-family: 'IM Fell English', serif;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.heatmap-section { margin-bottom: 36px; }
+.decade-grid {
+  display: grid;
+  gap: 3px;
+  font-size: 10px;
+}
+.decade-label {
+  color: var(--dim);
+  display: flex; align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+}
+.heatmap-cell {
+  aspect-ratio: 2;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  cursor: default;
+  border: 1px solid transparent;
+}
+.heatmap-cell:hover { border-color: var(--gold-dim); }
+.heatmap-col-header {
+  text-align: center;
+  color: var(--dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  padding-bottom: 2px;
+}
+.cat-completion-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.cat-completion-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px;
+  background: var(--card);
+}
+.cat-completion-name { flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text); }
+.cat-completion-bar { flex: 2; display: flex; gap: 1px; }
+.cat-comp-seg { width: 8px; height: 5px; background: var(--border); border: 1px solid var(--border-a); }
+.cat-comp-seg.filled { background: var(--green); border-color: #3d7a36; }
+.cat-completion-pct { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--gold); width: 34px; text-align: right; }
 
-  /* Legend */
-  .legend {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot {
-    width: 10px; height: 10px;
-    border-radius: 2px;
-  }
+/* Blind spots */
+.blind-spot-item {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  margin-bottom: 4px;
+  background: var(--card);
+}
+.blind-spot-name { font-family: 'IM Fell English', serif; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+.blind-spot-stats { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+.blind-spot-desc { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dim); margin-top: 4px; font-style: italic; }
 
-  /* Mobile toggle */
-  #sidebar-toggle {
-    display: none;
-    position: fixed;
-    top: 12px; left: 12px;
-    z-index: 200;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--gold);
-    width: 36px; height: 36px;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-  }
+/* ── DUPES ── */
+.dupe-item {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold-dim);
+  padding: 10px 14px;
+  margin-bottom: 4px;
+  background: var(--card);
+}
+.dupe-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); margin-bottom: 5px; }
+.dupe-cats { display: flex; flex-wrap: wrap; gap: 4px; }
+.dupe-cat-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  background: rgba(212,160,23,0.08);
+  color: var(--gold-dim);
+  border: 1px solid rgba(212,160,23,0.15);
+  padding: 1px 6px;
+}
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: var(--ink); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+/* ── DIRECTORS ── */
+.director-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.director-card {
+  background: var(--card);
+  padding: 14px;
+  cursor: pointer;
+}
+.director-card:hover { background: #181818; box-shadow: 2px 2px 0 var(--gold-dim); z-index: 1; position: relative; }
+.director-name { font-family: 'IM Fell English', serif; font-size: 15px; color: var(--text); margin-bottom: 3px; }
+.director-count { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+.director-detail-panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 20px;
+  margin-top: 8px;
+}
+.director-film-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+}
+.director-film-row:last-child { border-bottom: none; }
+.director-film-title { color: var(--text); flex: 1; }
+.director-film-year { font-family: 'Share Tech Mono', monospace; color: var(--dim); }
+.director-film-cat { color: var(--gold-dim); font-size: 10px; flex: 1; }
+.director-film-status { color: var(--green); }
 
-  @media (max-width: 768px) {
-    #sidebar {
-      transform: translateX(-100%);
-    }
-    #sidebar.open {
-      transform: translateX(0);
-    }
-    #main { margin-left: 0; }
-    #sidebar-toggle { display: flex; }
-    .panel { padding: 20px 16px; }
-    #topbar { padding: 10px 16px; padding-left: 56px; }
-    .film-grid { grid-template-columns: 1fr 1fr; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-  }
+/* ── WATCH NEXT ── */
+.suggest-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+.suggest-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.suggest-btn:hover { border-color: var(--gold); color: var(--gold); box-shadow: 2px 2px 0 var(--gold-dim); }
+.time-input-row {
+  display: flex; gap: 4px; margin-bottom: 20px; align-items: center;
+}
+.time-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dim); margin-right: 4px; }
+.time-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  padding: 3px 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+.time-btn.active { border-color: var(--gold); color: var(--gold); }
+.time-btn:hover { border-color: var(--border-a); color: var(--text); }
+.suggestion-result {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px;
+  margin-bottom: 4px;
+  background: var(--card);
+}
+.suggestion-result.active-suggestion { border-color: var(--gold); box-shadow: 2px 2px 0 var(--gold-dim); }
+.suggestion-film { font-family: 'IM Fell English', serif; font-size: 16px; color: var(--text); }
+.suggestion-cat { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--gold-dim); margin-top: 3px; }
+.suggestion-why { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dim); margin-top: 4px; font-style: italic; }
 
-  @media (max-width: 480px) {
-    .film-grid { grid-template-columns: 1fr; }
-  }
+/* ── JUMP TO TOP ── */
+#jump-top {
+  display: none;
+  position: fixed;
+  bottom: 20px; right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  padding: 6px 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  z-index: 200;
+  cursor: pointer;
+}
+#jump-top:hover { box-shadow: 2px 2px 0 var(--gold-dim); }
+#jump-top.visible { display: block; }
 
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-dim);
-  }
-  .empty-state .big { font-size: 2rem; margin-bottom: 8px; }
+/* ── MOBILE TOGGLE ── */
+#sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 10px; left: 10px;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  width: 34px; height: 34px;
+  font-size: 14px;
+  align-items: center; justify-content: center;
+}
 
-  /* highlight for search */
-  mark {
-    background: rgba(201,168,76,0.25);
-    color: var(--gold);
-    border-radius: 2px;
-    padding: 0 2px;
-  }
+/* ── SEARCH HIGHLIGHT ── */
+mark {
+  background: rgba(212,160,23,0.22);
+  color: var(--gold);
+  padding: 0 2px;
+}
+
+/* ── LEGEND ── */
+.legend {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  margin-bottom: 12px;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border: 1px solid var(--border-a); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-a); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+  #sidebar-toggle { display: flex; }
+  .panel { padding: 16px; }
+  #topbar { padding: 8px 16px; padding-left: 52px; }
+  #filter-bar { padding: 8px 16px; }
+  .film-grid { grid-template-columns: 1fr 1fr; }
+  .modal-body { flex-direction: column; }
+  .modal-poster { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 480px) {
+  .film-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
+<!-- LOADER -->
 <div id="loader">
-  <div class="logo">TaxoGeek</div>
-  <div class="sub">Loading the canon…</div>
-  <div class="spinner"></div>
+  <div class="logo">TAXOGEEK<span class="blink">_</span></div>
+  <div class="sub">Loading the canon...</div>
+  <div class="px-spinner"><span></span><span></span><span></span></div>
 </div>
 
+<!-- MOBILE TOGGLE -->
 <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+<!-- JUMP TO TOP -->
+<button id="jump-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
+
+<!-- OMDB KEY PROMPT -->
+<div id="omdb-prompt">
+  <div class="omdb-prompt-card">
+    <div class="omdb-prompt-title">ENABLE FILM DETAILS</div>
+    <div class="omdb-prompt-text">
+      Enter your OMDb API key to load film metadata, posters, and ratings when you click a title.<br><br>
+      Free key at <strong>omdbapi.com</strong> (1000 req/day).
+    </div>
+    <input class="omdb-key-input" id="omdb-key-input" type="text" placeholder="xxxxxxxx">
+    <div class="omdb-btn-row">
+      <button class="omdb-btn primary" onclick="saveOmdbKey()">[ SAVE KEY ]</button>
+      <button class="omdb-btn" onclick="skipOmdbKey()">[ SKIP ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILM DETAIL MODAL -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-card">
+    <button class="modal-close" onclick="closeModalDirect()">[×]</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
 
 <div id="app" style="display:none">
   <!-- SIDEBAR -->
   <nav id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-title">TaxoGeek</div>
+      <div class="sidebar-logo">TAXOGEEK<span class="blink">_</span></div>
       <div class="sidebar-sub">The Personal Canon</div>
     </div>
 
     <div class="global-stats" id="global-stats"></div>
 
     <div class="sidebar-search">
-      <input class="search-input" id="search-input" placeholder="Search films or categories…" oninput="handleSearch(this.value)">
+      <input class="search-input" id="search-input" placeholder="[ Search films or categories ]" oninput="handleSearch(this.value)">
     </div>
 
     <div class="sidebar-filters">
-      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-      <button class="filter-btn" onclick="setFilter('unwatched', this)">Unwatched</button>
-      <button class="filter-btn" onclick="setFilter('watched', this)">Watched</button>
+      <button class="filter-btn active" onclick="setWatchFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setWatchFilter('unwatched', this)">Unwatched</button>
+      <button class="filter-btn" onclick="setWatchFilter('watched', this)">Watched</button>
     </div>
+
+    <div class="super-tabs" id="super-tabs"></div>
 
     <div class="cat-nav" id="cat-nav"></div>
   </nav>
@@ -689,7 +1156,37 @@
       <button class="view-btn" onclick="showView('dupes', this)">Duplicates</button>
       <button class="view-btn" onclick="showView('directors', this)">Directors</button>
       <button class="view-btn" onclick="showView('next', this)">Watch Next</button>
+      <div class="topbar-spacer"></div>
+      <button class="topbar-action" onclick="toggleFilterBar()">[ Filters ]</button>
+      <button class="topbar-action" onclick="expandAll()">[ + All ]</button>
+      <button class="topbar-action" onclick="collapseAll()">[ - All ]</button>
       <span class="topbar-info" id="topbar-info"></span>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div id="filter-bar" style="display:none">
+      <div class="filter-bar-row">
+        <span class="filter-section-label">Decade:</span>
+        <div class="decade-btns" id="decade-btns"></div>
+      </div>
+      <div class="filter-bar-row">
+        <span class="filter-section-label">Year:</span>
+        <div class="range-wrap">
+          <span class="range-label" id="range-label">1920 — 2025</span>
+          <input class="range-slider" type="range" id="range-min" min="1920" max="2025" value="1920" oninput="handleRangeChange()">
+          <input class="range-slider" type="range" id="range-max" min="1920" max="2025" value="2025" oninput="handleRangeChange()">
+        </div>
+        <span class="filter-section-label" style="margin-left:16px">Sort:</span>
+        <select class="sort-select" id="sort-select" onchange="renderCanon()">
+          <option value="default">Default</option>
+          <option value="year-asc">Year: oldest first</option>
+          <option value="year-desc">Year: newest first</option>
+          <option value="title-az">Title: A–Z</option>
+          <option value="watched-first">Watched first</option>
+          <option value="unwatched-first">Unwatched first</option>
+        </select>
+      </div>
+      <div class="filter-summary" id="filter-summary"></div>
     </div>
 
     <!-- CANON VIEW -->
@@ -701,41 +1198,61 @@
     <div class="panel" id="view-stats">
       <div class="stats-grid" id="stats-cards"></div>
       <div class="heatmap-section">
-        <div class="section-title">Decade × Genre Heatmap</div>
+        <div class="section-title">Decade Coverage</div>
         <div class="legend">
-          <span class="legend-item"><span class="legend-dot" style="background:#1a3a2a"></span>Low</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#2E6B45"></span>Medium</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#C9A84C"></span>High</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#1a2a1a"></span>Low</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Medium</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span>High</span>
         </div>
         <div id="heatmap"></div>
       </div>
       <div class="heatmap-section">
-        <div class="section-title">Category Completion</div>
+        <div class="section-title">Taxonomic Blind Spots</div>
+        <div id="blind-spots"></div>
+      </div>
+      <div class="heatmap-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="section-title" style="margin-bottom:0">Category Completion</div>
+          <button class="topbar-action" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
+        </div>
         <div class="cat-completion-list" id="cat-completion"></div>
       </div>
     </div>
 
-    <!-- DUPLICATES VIEW -->
+    <!-- DUPES VIEW -->
     <div class="panel" id="view-dupes">
-      <p style="color:var(--text-dim);margin-bottom:24px;font-size:13px;">Films appearing in multiple categories — taxonomically significant cross-listings.</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);margin-bottom:20px">
+        Films appearing in multiple categories — taxonomically significant cross-listings.
+      </div>
       <div id="dupes-content"></div>
     </div>
 
     <!-- DIRECTORS VIEW -->
     <div class="panel" id="view-directors">
-      <p style="color:var(--text-dim);margin-bottom:24px;font-size:13px;">Click a director to see all their films across categories.</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);margin-bottom:20px">
+        Directors with 2+ films in the canon. Extracted from category descriptions + OMDb data.
+      </div>
       <div class="director-grid" id="director-grid"></div>
       <div id="director-detail"></div>
     </div>
 
     <!-- WATCH NEXT VIEW -->
     <div class="panel" id="view-next">
+      <div class="time-input-row">
+        <span class="time-label">Session:</span>
+        <button class="time-btn active" onclick="setTime(0,this)">Any</button>
+        <button class="time-btn" onclick="setTime(60,this)">1h</button>
+        <button class="time-btn" onclick="setTime(90,this)">1.5h</button>
+        <button class="time-btn" onclick="setTime(120,this)">2h</button>
+        <button class="time-btn" onclick="setTime(150,this)">2.5h</button>
+        <button class="time-btn" onclick="setTime(180,this)">3h+</button>
+      </div>
       <div class="suggest-controls">
-        <button class="suggest-btn" onclick="suggestRandom()">🎲 Surprise me</button>
-        <button class="suggest-btn" onclick="suggestByGap()">📊 Fill biggest gap</button>
-        <button class="suggest-btn" onclick="suggestArthouse()">🎨 Arthouse pick</button>
-        <button class="suggest-btn" onclick="suggestRecent()">📅 Most recent unwatched</button>
-        <button class="suggest-btn" onclick="suggestOldest()">📜 Oldest unwatched</button>
+        <button class="suggest-btn" onclick="suggestRandom()">[ Surprise me ]</button>
+        <button class="suggest-btn" onclick="suggestByGap()">[ Fill biggest gap ]</button>
+        <button class="suggest-btn" onclick="suggestArthouse()">[ Arthouse pick ]</button>
+        <button class="suggest-btn" onclick="suggestRecent()">[ Most recent ]</button>
+        <button class="suggest-btn" onclick="suggestOldest()">[ Oldest ]</button>
       </div>
       <div id="suggestions"></div>
     </div>
@@ -743,14 +1260,79 @@
 </div>
 
 <script>
-// ── STATE ──
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
 let allCategories = [];
-let filmIndex = {};       // title → [catIndex, ...]
-let directorIndex = {};   // director → [{film, cat, watched}]
-let currentFilter = 'all';
-let currentSearch = '';
-const LS_KEY = 'taxogeek_watched';
+let filmIndex = {};       // normalizedTitle → [catIndex, ...]
+let directorIndex = {};   // directorName → { films:[], cats:Set }
+let directorsCached = false;
 
+let currentWatchFilter = 'all';
+let currentSearch = '';
+let activeSuperCat = 'ALL';
+let activeDecades = new Set();
+let rangeMin = 1920;
+let rangeMax = 2025;
+let sessionTime = 0;      // minutes, 0 = any
+let collapsedCats = new Set(); // cat indices that are collapsed
+let selectedSuggestion = 0;
+
+let searchDebounce = null;
+
+const LS_KEY     = 'taxogeek_watched';
+const LS_OMDB    = 'taxogeek_omdb_key';
+const LS_OMDB_SK = 'taxogeek_omdb_skip';
+const omdbCache  = new Map(); // "title|year" → data
+
+// known directors — the authoritative list per brief
+const KNOWN_DIRECTORS = [
+  'Bergman','Tarkovsky','Antonioni','Godard','Truffaut','Varda','Rohmer',
+  'Kieslowski','Haneke','Hitchcock','Lynch','Kubrick','Scorsese','Coppola',
+  'De Palma','Tarantino','Melville','Bresson','Renoir','Fellini','Herzog',
+  'Fassbinder','Wenders','Cronenberg','Polanski','Spielberg','Mann',
+  'Ford','Hawks','Leone','Peckinpah','Altman','Cassavetes','Anderson',
+  'Fincher','Nolan','Villeneuve','Aronofsky','Von Trier','Carax',
+  'Besson','Beineix','Clouzot','Rivette','Chabrol','Malle','Demy',
+  'Marker','Resnais','Vigo','Tati','Pialat','Techine','Ozon','Audiard',
+  'Dardenne','Loach','Leigh','Russell','Lean','Reed','Powell',
+  'Pressburger','Huston','Wilder','Lubitsch','Lang','Murnau',
+  'Eisenstein','Pudovkin','Vertov','Bunuel','Pasolini','Visconti',
+  'De Sica','Rossellini','Olmi','Taviani','Bertolucci','Wertmuller',
+  'Ferreri','Zurlini','Kurosawa','Ozu','Mizoguchi','Imamura',
+  'Oshima','Ichikawa','Shinoda','Zinnemann','Friedkin','Ashby',
+  'Malick','Eastwood','Demme','Forman','Pollack','Nichols',
+  'Coen','Cameron','Scott','Verhoeven','De Wilde','Trumbull'
+];
+
+// franchise detection patterns
+const FRANCHISE_PATTERNS = [
+  { name:'Star Wars', regex:/^star wars/i },
+  { name:'Saw', regex:/^saw\b|^jigsaw\b|^spiral.*saw|^the final destination/i },
+  { name:'Final Destination', regex:/^final destination/i },
+  { name:'Godfather', regex:/^the godfather/i },
+  { name:'Lord of the Rings', regex:/^the lord of the rings/i },
+  { name:'Indiana Jones', regex:/^indiana jones/i },
+  { name:'Terminator', regex:/^terminator|^terminator \d/i },
+  { name:'Alien', regex:/^alien\b|^aliens\b|^alien vs/i },
+  { name:'Friday the 13th', regex:/^friday the 13th/i },
+  { name:'Halloween', regex:/^halloween\b/i },
+  { name:'Scream', regex:/^scream\b/i },
+  { name:'Spider-Man', regex:/^spider-man/i },
+  { name:'John Wick', regex:/^john wick/i },
+  { name:'Back to the Future', regex:/^back to the future/i },
+  { name:'Mad Max', regex:/^mad max|^furiosa/i },
+  { name:'Harry Potter', regex:/^harry potter|^fantastic beasts/i },
+  { name:'Andor', regex:/^andor:/i },
+  { name:'The Mandalorian', regex:/^the mandalorian:/i },
+  { name:'Deadpool', regex:/^deadpool/i },
+  { name:'The Dark Knight', regex:/^the dark knight|^batman begins|^the dark knight rises/i },
+  { name:'Bourne', regex:/^the bourne|^jason bourne/i }
+];
+
+// ══════════════════════════════════════════════
+// STORAGE HELPERS
+// ══════════════════════════════════════════════
 function getSiteWatched() {
   try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); }
   catch { return new Set(); }
@@ -758,47 +1340,57 @@ function getSiteWatched() {
 function setSiteWatched(set) {
   localStorage.setItem(LS_KEY, JSON.stringify([...set]));
 }
+function getOmdbKey() { return localStorage.getItem(LS_OMDB) || ''; }
 
-// ── PARSE MARKDOWN ──
+// ══════════════════════════════════════════════
+// MARKDOWN PARSER
+// ══════════════════════════════════════════════
 function parseMarkdown(md) {
   const lines = md.split(/\r?\n/);
   const categories = [];
   let current = null;
 
-  for (let line of lines) {
-    line = line.trim();
+  for (let raw of lines) {
+    const line = raw.trim();
     if (!line || line === 'MOVIEEZ LIST' || line === 'MOVIEEEZ LIST') continue;
 
-    // Film entry
     if (line.startsWith('- [')) {
       if (!current) continue;
       const watched = line.startsWith('- [x]') || line.startsWith('- [X]');
-      const raw = line.replace(/^- \[[xX ]\] ?/, '').trim();
-      // Extract year
-      const yearMatch = raw.match(/\((\d{4})\)\s*(?:—.*)?$/);
-      const year = yearMatch ? parseInt(yearMatch[1]) : null;
-      const title = raw.replace(/\s*\(\d{4}\).*$/, '').trim();
-      // Extract note (after —)
-      const noteMatch = raw.match(/\(\d{4}\)\s*—\s*(.+)$/);
-      const note = noteMatch ? noteMatch[1].trim() : null;
+      let rest = line.replace(/^- \[[xX ]\] ?/, '').trim();
 
-      current.films.push({ title, year, watched, note, raw });
+      // [!] new tag
+      const isNew = rest.includes('[!]');
+      rest = rest.replace(/\[!\]/g, '').trim();
+
+      // Extract note after — (e.g. documentaries)
+      const noteMatch = rest.match(/\((\d{4}[^\)]*)\)\s*—\s*(.+)$/);
+      const note = noteMatch ? noteMatch[2].trim() : null;
+
+      // Extract year
+      const yearMatch = rest.match(/\((\d{4})\)/);
+      const year = yearMatch ? parseInt(yearMatch[1]) : null;
+
+      // Primary title (before /)
+      let title = rest.replace(/\s*\(.*$/, '').trim();
+      const slashIdx = title.indexOf(' / ');
+      const primaryTitle = slashIdx >= 0 ? title.slice(0, slashIdx).trim() : title;
+
+      current.films.push({ title: primaryTitle, fullTitle: title, year, watched, note, isNew, raw: rest });
     } else if (line.length > 3 && !line.startsWith('#')) {
-      // Category header — split name and description
+      // Category header
       const parenMatch = line.match(/^(.+?)\s*\((.+)\)\s*$/);
       let name, desc;
       if (parenMatch) {
         name = parenMatch[1].trim();
         desc = parenMatch[2].trim();
       } else {
-        name = line;
-        desc = null;
+        name = line; desc = null;
       }
-      // Extract super-category (before —)
       const dashMatch = name.match(/^(.+?)\s*—\s*(.+)$/);
       let superCat = null, subName = name;
       if (dashMatch) {
-        superCat = dashMatch[1].trim();
+        superCat = dashMatch[1].trim().toUpperCase();
         subName = dashMatch[2].trim();
       }
       current = { name, superCat, subName, desc, films: [] };
@@ -808,7 +1400,16 @@ function parseMarkdown(md) {
   return categories;
 }
 
-// ── BUILD INDEXES ──
+// ══════════════════════════════════════════════
+// NORMALIZE
+// ══════════════════════════════════════════════
+function normalizeTitle(t) {
+  return t.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// ══════════════════════════════════════════════
+// BUILD INDEXES
+// ══════════════════════════════════════════════
 function buildIndexes(cats) {
   filmIndex = {};
   directorIndex = {};
@@ -817,32 +1418,17 @@ function buildIndexes(cats) {
     cat.films.forEach(film => {
       const key = normalizeTitle(film.title);
       if (!filmIndex[key]) filmIndex[key] = [];
-      filmIndex[key].push(ci);
-
-      // Try to extract director from title (heuristic - from category context)
-      // We'll parse directors from category names/descriptions
+      if (!filmIndex[key].includes(ci)) filmIndex[key].push(ci);
     });
-  });
 
-  // Extract known directors from category descriptions and film titles
-  const knownDirectors = [
-    'Bergman','Tarkovsky','Antonioni','Godard','Truffaut','Varda','Rohmer',
-    'Kieslowski','Haneke','Hitchcock','Lynch','Kubrick','Scorsese','Coppola',
-    'De Palma','Tarantino','Melville','Bresson','Renoir','Fellini','Herzog',
-    'Fassbinder','Wenders','Cronenberg','Polanski','Spielberg','Mann',
-    'Ford','Hawks','Leone','Peckinpah','Altman','Cassavetes','Anderson',
-    'Fincher','Nolan','Villeneuve','Aronofsky','Von Trier','Haneke',
-    'Carax','Besson','Beineix','Clouzot','Melville','Truffaut'
-  ];
-
-  // Build from category descriptions
-  cats.forEach((cat, ci) => {
-    const text = (cat.name + ' ' + (cat.desc || '')).toLowerCase();
-    knownDirectors.forEach(d => {
-      if (text.includes(d.toLowerCase())) {
+    // Director extraction from category text (Source A)
+    const text = (cat.name + ' ' + (cat.desc || ''));
+    KNOWN_DIRECTORS.forEach(d => {
+      const re = new RegExp('\\b' + d + '\\b', 'i');
+      if (re.test(text)) {
         if (!directorIndex[d]) directorIndex[d] = { films: [], cats: new Set() };
         cat.films.forEach(film => {
-          directorIndex[d].films.push({ film, catName: cat.name, catIndex: ci });
+          directorIndex[d].films.push({ film, catName: cat.subName || cat.name, catIndex: ci });
           directorIndex[d].cats.add(cat.name);
         });
       }
@@ -850,414 +1436,595 @@ function buildIndexes(cats) {
   });
 }
 
-function normalizeTitle(t) {
-  return t.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+// ══════════════════════════════════════════════
+// ENRICH DIRECTOR INDEX FROM OMDB (Source B)
+// ══════════════════════════════════════════════
+function enrichDirectorFromOmdb(title, year, catIndex, directorName) {
+  if (!directorName) return;
+  const parts = directorName.split(',').map(s => s.trim());
+  parts.forEach(name => {
+    const lastName = name.split(' ').pop();
+    const matched = KNOWN_DIRECTORS.find(d => d.toLowerCase() === lastName.toLowerCase())
+      || lastName;
+    if (!directorIndex[matched]) directorIndex[matched] = { films: [], cats: new Set() };
+    const cat = allCategories[catIndex];
+    if (cat) {
+      const film = cat.films.find(f => normalizeTitle(f.title) === normalizeTitle(title));
+      if (film) {
+        const already = directorIndex[matched].films.find(e => normalizeTitle(e.film.title) === normalizeTitle(title));
+        if (!already) directorIndex[matched].films.push({ film, catName: cat.subName || cat.name, catIndex });
+        directorIndex[matched].cats.add(cat.name);
+      }
+    }
+    directorsCached = false; // invalidate cache
+  });
 }
 
-// ── RENDER CANON ──
-function renderCanon(filter = 'all', search = '') {
-  const siteWatched = getSiteWatched();
-  const container = document.getElementById('canon-content');
-  const navContainer = document.getElementById('cat-nav');
-  let navHtml = '';
+// ══════════════════════════════════════════════
+// SUPER-CAT TABS (SIDEBAR)
+// ══════════════════════════════════════════════
+function buildSuperTabs() {
+  const supers = ['ALL'];
+  allCategories.forEach(c => { if (c.superCat && !supers.includes(c.superCat)) supers.push(c.superCat); });
+
+  document.getElementById('super-tabs').innerHTML = supers.map(s =>
+    `<button class="super-tab${s === activeSuperCat ? ' active' : ''}" onclick="setSuperCat('${s.replace(/'/g,"\\'")}')">${s === 'ALL' ? 'ALL' : abbrev(s)}</button>`
+  ).join('');
+}
+
+function abbrev(s) {
+  // shorten long super-cat names for the tab
+  const words = s.split(/\s+/);
+  if (words.length <= 2) return s;
+  return words.slice(0,2).join(' ');
+}
+
+function setSuperCat(s) {
+  activeSuperCat = s;
+  buildSuperTabs();
+  buildCatNav();
+  renderCanon();
+}
+
+// ══════════════════════════════════════════════
+// CAT NAV (build once, update active class only)
+// ══════════════════════════════════════════════
+let navBuilt = false;
+function buildCatNav() {
+  const nav = document.getElementById('cat-nav');
   let html = '';
-
-  const searchLower = search.toLowerCase();
-
   let lastSuper = null;
 
   allCategories.forEach((cat, ci) => {
-    // Filter films
+    if (activeSuperCat !== 'ALL' && cat.superCat !== activeSuperCat) return;
+    if (cat.superCat !== lastSuper) {
+      if (cat.superCat) html += `<div class="cat-nav-group">${cat.superCat}</div>`;
+      lastSuper = cat.superCat;
+    }
+    html += `<span class="cat-nav-item" id="nav-${ci}" onclick="scrollToCategory(${ci})">${cat.subName || cat.name}</span>`;
+  });
+  nav.innerHTML = html;
+}
+
+function updateNavActive(ci) {
+  document.querySelectorAll('.cat-nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`nav-${ci}`)?.classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+// RENDER CANON
+// ══════════════════════════════════════════════
+function renderCanon() {
+  const siteWatched = getSiteWatched();
+  const searchLower = currentSearch.toLowerCase();
+  const sortVal = document.getElementById('sort-select')?.value || 'default';
+  const container = document.getElementById('canon-content');
+
+  let html = '';
+
+  allCategories.forEach((cat, ci) => {
+    // Super-cat filter
+    if (activeSuperCat !== 'ALL' && cat.superCat !== activeSuperCat) return;
+
+    // Filter and sort films
     let films = cat.films.filter(f => {
       const fw = f.watched || siteWatched.has(normalizeTitle(f.title));
-      if (filter === 'watched' && !fw) return false;
-      if (filter === 'unwatched' && fw) return false;
-      if (search) {
+      if (currentWatchFilter === 'watched' && !fw) return false;
+      if (currentWatchFilter === 'unwatched' && fw) return false;
+      if (f.year) {
+        const decade = Math.floor(f.year / 10) * 10;
+        if (activeDecades.size > 0 && !activeDecades.has(decade)) return false;
+        if (f.year < rangeMin || f.year > rangeMax) return false;
+      }
+      if (searchLower) {
         return f.title.toLowerCase().includes(searchLower) ||
+               (f.fullTitle || '').toLowerCase().includes(searchLower) ||
                cat.name.toLowerCase().includes(searchLower) ||
                (cat.desc || '').toLowerCase().includes(searchLower);
       }
       return true;
     });
 
-    if (films.length === 0 && search) return;
+    if (films.length === 0 && searchLower) return;
+    if (films.length === 0 && activeDecades.size > 0) return;
 
-    const watchedCount = cat.films.filter(f =>
-      f.watched || siteWatched.has(normalizeTitle(f.title))
-    ).length;
-    const total = cat.films.length;
-    const pct = total > 0 ? Math.round(watchedCount / total * 100) : 0;
-
-    // Nav
-    if (cat.superCat !== lastSuper) {
-      if (cat.superCat) navHtml += `<div class="cat-nav-group">${cat.superCat}</div>`;
-      lastSuper = cat.superCat;
+    // Apply sort
+    if (sortVal !== 'default') {
+      films = [...films];
+      if (sortVal === 'year-asc') films.sort((a,b) => (a.year||9999)-(b.year||9999));
+      else if (sortVal === 'year-desc') films.sort((a,b) => (b.year||0)-(a.year||0));
+      else if (sortVal === 'title-az') films.sort((a,b) => a.title.localeCompare(b.title));
+      else if (sortVal === 'watched-first') films.sort((a,b) => {
+        const aw = a.watched || siteWatched.has(normalizeTitle(a.title));
+        const bw = b.watched || siteWatched.has(normalizeTitle(b.title));
+        return bw - aw;
+      });
+      else if (sortVal === 'unwatched-first') films.sort((a,b) => {
+        const aw = a.watched || siteWatched.has(normalizeTitle(a.title));
+        const bw = b.watched || siteWatched.has(normalizeTitle(b.title));
+        return aw - bw;
+      });
     }
-    navHtml += `<span class="cat-nav-item" onclick="scrollToCategory(${ci})" id="nav-${ci}">${cat.subName || cat.name}</span>`;
 
-    // Films html
-    let filmsHtml = films.map(f => {
-      const key = normalizeTitle(f.title);
-      const fw = f.watched || siteWatched.has(key);
-      const siteOnly = !f.watched && siteWatched.has(key);
-      const isDupe = filmIndex[key] && filmIndex[key].length > 1;
+    const watchedCount = cat.films.filter(f => f.watched || siteWatched.has(normalizeTitle(f.title))).length;
+    const total = cat.films.length;
+    const pct = total > 0 ? watchedCount / total : 0;
+    const isCollapsed = collapsedCats.has(ci) && !searchLower;
 
-      let displayTitle = f.title;
-      if (search && searchLower) {
-        displayTitle = highlightText(f.title, searchLower);
-      }
+    // pixel progress segments (10 segs)
+    const filledSegs = Math.round(pct * 10);
+    const segsHtml = Array.from({length:10}, (_,i) =>
+      `<div class="cat-px-seg${i < filledSegs ? ' filled' : ''}"></div>`
+    ).join('');
 
-      return `<div class="film-item${f.watched ? ' watched' : ''}${siteOnly ? ' site-watched' : ''}"
-        onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}', this)"
-        title="${fw ? 'Watched' : 'Mark as watched on site'}">
-        ${isDupe ? `<span class="film-dupe-badge">×${filmIndex[key].length}</span>` : ''}
-        <div class="film-check">${f.watched ? '✓' : (siteOnly ? '·' : '')}</div>
-        <div class="film-info">
-          <div class="film-title">${displayTitle}</div>
-          ${f.year ? `<div class="film-year">${f.year}</div>` : ''}
-          ${f.note ? `<div class="film-year" style="opacity:0.8;font-style:italic">${f.note}</div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
+    // detect franchises within this category
+    const franchiseMap = detectFranchises(films);
+
+    let filmsHtml = '';
+    if (franchiseMap.size > 0) {
+      filmsHtml = renderFilmsWithFranchises(films, franchiseMap, siteWatched, searchLower, ci);
+    } else {
+      filmsHtml = renderFilmGrid(films, siteWatched, searchLower, ci);
+    }
 
     html += `<div class="category-block" id="cat-${ci}">
-      <div class="category-header">
-        ${cat.superCat ? `<div class="category-super">${cat.superCat}</div>` : ''}
-        <div class="category-name">${cat.subName || cat.name}</div>
-        ${cat.desc ? `<div class="category-desc">${cat.desc}</div>` : ''}
-        <div class="category-meta">
-          <div class="cat-progress-bar"><div class="cat-progress-fill" style="width:${pct}%"></div></div>
-          <span class="cat-count">${watchedCount}/${total} · ${pct}%</span>
+      <div class="cat-header" onclick="toggleCategory(${ci})">
+        <div class="cat-header-left">
+          ${cat.superCat ? `<div class="cat-super">${cat.superCat}</div>` : ''}
+          <div class="cat-name">${cat.subName || cat.name}</div>
+          ${cat.desc ? `<div class="cat-desc">${cat.desc}</div>` : ''}
+          <div class="cat-meta">
+            <div class="cat-px-bar">${segsHtml}</div>
+            <span class="cat-count">${watchedCount}/${total}</span>
+          </div>
         </div>
+        <div class="cat-toggle-icon">${isCollapsed ? '[+]' : '[-]'}</div>
       </div>
-      <div class="film-grid">${filmsHtml || '<div style="color:var(--text-dim);font-size:12px;padding:8px">No films match current filter.</div>'}</div>
+      <div class="film-grid-wrap" id="grid-${ci}" style="${isCollapsed ? 'display:none' : ''}">
+        ${filmsHtml}
+      </div>
     </div>`;
   });
 
-  container.innerHTML = html || '<div class="empty-state"><div class="big">∅</div>No results found.</div>';
-  navContainer.innerHTML = navHtml;
+  container.innerHTML = html || '<div class="empty-state">∅ No results match current filters.</div>';
+  updateFilterSummary(container);
+}
+
+function renderFilmGrid(films, siteWatched, searchLower, ci) {
+  if (!films.length) return '<div class="empty-state" style="padding:16px">No films match current filter.</div>';
+  return `<div class="film-grid">${films.map(f => filmCardHtml(f, siteWatched, searchLower, ci)).join('')}</div>`;
+}
+
+function renderFilmsWithFranchises(films, franchiseMap, siteWatched, searchLower, ci) {
+  // Group franchise films together, non-franchise films separate
+  const franchiseFilms = new Set();
+  let html = '';
+
+  // Non-franchise films first
+  const solo = films.filter(f => !franchiseMap.has(normalizeTitle(f.title)));
+  if (solo.length) html += `<div class="film-grid">${solo.map(f => filmCardHtml(f, siteWatched, searchLower, ci)).join('')}</div>`;
+
+  // Franchise groups
+  const groups = new Map();
+  franchiseMap.forEach((fname, key) => {
+    if (!groups.has(fname)) groups.set(fname, []);
+    const film = films.find(f => normalizeTitle(f.title) === key);
+    if (film) groups.get(fname).push(film);
+  });
+
+  groups.forEach((ffilms, fname) => {
+    const watched = ffilms.filter(f => f.watched || siteWatched.has(normalizeTitle(f.title))).length;
+    html += `<div class="franchise-group">
+      <div class="franchise-header">
+        <span>${fname}</span>
+        <span class="franchise-ring">${watched}/${ffilms.length} complete</span>
+      </div>
+      <div class="film-grid">${ffilms.map(f => filmCardHtml(f, siteWatched, searchLower, ci)).join('')}</div>
+    </div>`;
+  });
+
+  return html;
+}
+
+function detectFranchises(films) {
+  const map = new Map(); // normalizedTitle → franchiseName
+  films.forEach(f => {
+    for (const fp of FRANCHISE_PATTERNS) {
+      if (fp.regex.test(f.title)) {
+        map.set(normalizeTitle(f.title), fp.name);
+        break;
+      }
+    }
+  });
+  // Only return if 2+ films in franchise
+  const counts = {};
+  map.forEach(fname => counts[fname] = (counts[fname]||0)+1);
+  const result = new Map();
+  map.forEach((fname, key) => { if (counts[fname] >= 2) result.set(key, fname); });
+  return result;
+}
+
+function filmCardHtml(f, siteWatched, searchLower, ci) {
+  const key = normalizeTitle(f.title);
+  const fw = f.watched || siteWatched.has(key);
+  const siteOnly = !f.watched && siteWatched.has(key);
+  const isDupe = filmIndex[key] && filmIndex[key].length > 1;
+
+  let displayTitle = f.title;
+  if (searchLower) displayTitle = highlightText(f.title, searchLower);
+
+  const checkChar = f.watched ? '█' : (siteOnly ? '·' : '×');
+
+  return `<div class="film-item${f.watched ? ' watched' : ''}${siteOnly ? ' site-watched' : ''}${f.isNew ? ' new-film' : ''}">
+    ${isDupe ? `<span class="film-dupe-badge">×${filmIndex[key].length}</span>` : ''}
+    <div class="film-check" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}')" title="${fw ? 'Watched' : 'Mark as watched'}">${checkChar}</div>
+    <div class="film-info">
+      <div class="film-title" onclick="openFilmModal('${f.title.replace(/'/g,"\\'")}', ${f.year||'null'}, ${ci})">${displayTitle}</div>
+      ${f.year ? `<div class="film-year">${f.year}</div>` : ''}
+      ${f.note ? `<div class="film-note">${f.note}</div>` : ''}
+    </div>
+  </div>`;
 }
 
 function highlightText(text, search) {
-  const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return text.replace(regex, '<mark>$1</mark>');
+  const re = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<mark>$1</mark>');
 }
 
-// ── TOGGLE SITE WATCH ──
-function toggleSiteWatch(key, el) {
+// ══════════════════════════════════════════════
+// CATEGORY COLLAPSE
+// ══════════════════════════════════════════════
+function toggleCategory(ci) {
+  const grid = document.getElementById(`grid-${ci}`);
+  const icon = document.querySelector(`#cat-${ci} .cat-toggle-icon`);
+  if (!grid) return;
+  if (collapsedCats.has(ci)) {
+    collapsedCats.delete(ci);
+    grid.style.display = '';
+    if (icon) icon.textContent = '[-]';
+  } else {
+    collapsedCats.add(ci);
+    grid.style.display = 'none';
+    if (icon) icon.textContent = '[+]';
+  }
+}
+
+function expandAll() {
+  collapsedCats.clear();
+  renderCanon();
+}
+
+function collapseAll() {
+  allCategories.forEach((_,i) => collapsedCats.add(i));
+  renderCanon();
+}
+
+// ══════════════════════════════════════════════
+// TOGGLE SITE WATCH
+// ══════════════════════════════════════════════
+function toggleSiteWatch(key) {
   const set = getSiteWatched();
-  // Don't override file-watched state
-  const cat = allCategories.find(c => c.films.find(f => normalizeTitle(f.title) === key));
-  const film = cat && cat.films.find(f => normalizeTitle(f.title) === key);
-  if (film && film.watched) return; // file is authoritative
+  // Don't override file-authoritative watched
+  const found = allCategories.flatMap(c => c.films).find(f => normalizeTitle(f.title) === key);
+  if (found && found.watched) return;
 
   if (set.has(key)) set.delete(key);
   else set.add(key);
   setSiteWatched(set);
-  renderCanon(currentFilter, currentSearch);
+  renderCanon();
   updateGlobalStats();
 }
 
-// ── STATS ──
-function renderStats() {
-  const siteWatched = getSiteWatched();
+// ══════════════════════════════════════════════
+// OMDB MODAL
+// ══════════════════════════════════════════════
+function openFilmModal(title, year, catIndex) {
+  const key = getOmdbKey();
+  const skipFlag = localStorage.getItem(LS_OMDB_SK);
 
-  let totalFilms = 0, totalWatched = 0;
-  const decadeMap = {}; // decade → {total, watched}
-  const catData = [];
-
-  allCategories.forEach(cat => {
-    let cw = 0;
-    cat.films.forEach(f => {
-      totalFilms++;
-      const fw = f.watched || siteWatched.has(normalizeTitle(f.title));
-      if (fw) { totalWatched++; cw++; }
-      if (f.year) {
-        const decade = Math.floor(f.year / 10) * 10;
-        if (!decadeMap[decade]) decadeMap[decade] = { total: 0, watched: 0 };
-        decadeMap[decade].total++;
-        if (fw) decadeMap[decade].watched++;
-      }
-    });
-    catData.push({ name: cat.subName || cat.name, total: cat.films.length, watched: cw });
-  });
-
-  // Stat cards
-  const pct = Math.round(totalWatched / totalFilms * 100);
-  const remaining = totalFilms - totalWatched;
-  document.getElementById('stats-cards').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-card-label">Total in Canon</div>
-      <div class="stat-card-value">${totalFilms}</div>
-      <div class="stat-card-sub">across ${allCategories.length} categories</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Watched</div>
-      <div class="stat-card-value">${totalWatched}</div>
-      <div class="stat-card-sub">${pct}% complete</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Remaining</div>
-      <div class="stat-card-value">${remaining}</div>
-      <div class="stat-card-sub">still to see</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">Categories</div>
-      <div class="stat-card-value">${allCategories.length}</div>
-      <div class="stat-card-sub">${catData.filter(c => c.watched === c.total).length} fully completed</div>
-    </div>
-  `;
-
-  // Heatmap
-  const decades = Object.keys(decadeMap).map(Number).sort();
-  // Get unique genre groups for columns
-  const superCats = [...new Set(allCategories.map(c => c.superCat || c.name).filter(Boolean))].slice(0, 8);
-
-  let hmHtml = `<div class="decade-grid" style="grid-template-columns: 60px repeat(${decades.length}, 1fr)">`;
-  hmHtml += `<div></div>`;
-  decades.forEach(d => {
-    hmHtml += `<div class="heatmap-col-header">${d}s</div>`;
-  });
-
-  // One row: overall per decade
-  hmHtml += `<div class="decade-label">All</div>`;
-  decades.forEach(d => {
-    const data = decadeMap[d];
-    const p = data.total > 0 ? data.watched / data.total : 0;
-    const color = p === 0 ? '#1a1a1a' :
-      p < 0.25 ? '#1a2e22' :
-      p < 0.5 ? '#1e4a30' :
-      p < 0.75 ? '#2E6B45' : '#C9A84C';
-    hmHtml += `<div class="heatmap-cell" style="background:${color}" title="${data.watched}/${data.total} watched in ${d}s">
-      <span style="color:${p>0.5?'#000':'var(--text-dim)'};">${data.watched}</span>
-    </div>`;
-  });
-
-  hmHtml += '</div>';
-  document.getElementById('heatmap').innerHTML = hmHtml;
-
-  // Category completion
-  const sorted = [...catData].sort((a, b) => (b.watched/b.total) - (a.watched/a.total));
-  document.getElementById('cat-completion').innerHTML = sorted.map(c => {
-    const p = c.total > 0 ? Math.round(c.watched / c.total * 100) : 0;
-    return `<div class="cat-completion-item">
-      <div class="cat-completion-name">${c.name}</div>
-      <div class="cat-completion-bar"><div class="cat-completion-fill" style="width:${p}%"></div></div>
-      <div class="cat-completion-pct">${p}%</div>
-    </div>`;
-  }).join('');
+  if (!key && !skipFlag) {
+    showOmdbPrompt(title, year, catIndex);
+    return;
+  }
+  _doOpenModal(title, year, catIndex);
 }
 
-// ── DUPLICATES ──
-function renderDupes() {
-  const dupes = Object.entries(filmIndex)
-    .filter(([, cats]) => cats.length > 1)
-    .sort((a, b) => b[1].length - a[1].length);
+function showOmdbPrompt(title, year, catIndex) {
+  document.getElementById('omdb-prompt').classList.add('open');
+  document.getElementById('omdb-key-input').dataset.title = title;
+  document.getElementById('omdb-key-input').dataset.year  = year || '';
+  document.getElementById('omdb-key-input').dataset.ci    = catIndex;
+}
 
-  if (dupes.length === 0) {
-    document.getElementById('dupes-content').innerHTML = '<div class="empty-state"><div class="big">✓</div>No duplicates found.</div>';
+function saveOmdbKey() {
+  const inp = document.getElementById('omdb-key-input');
+  const k = inp.value.trim();
+  if (k) {
+    localStorage.setItem(LS_OMDB, k);
+    document.getElementById('omdb-prompt').classList.remove('open');
+    const t = inp.dataset.title, y = inp.dataset.year, ci = inp.dataset.ci;
+    if (t) _doOpenModal(t, y ? parseInt(y) : null, parseInt(ci));
+  }
+}
+
+function skipOmdbKey() {
+  localStorage.setItem(LS_OMDB_SK, '1');
+  document.getElementById('omdb-prompt').classList.remove('open');
+}
+
+async function _doOpenModal(title, year, catIndex) {
+  const overlay = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  overlay.classList.add('open');
+
+  const key = getOmdbKey();
+  if (!key) {
+    content.innerHTML = renderModalNoKey(title, year, catIndex);
     return;
   }
 
-  document.getElementById('dupes-content').innerHTML = dupes.map(([key, catIdxs]) => {
-    // Find a film object to get display title
-    const film = allCategories[catIdxs[0]].films.find(f => normalizeTitle(f.title) === key);
-    const title = film ? film.raw : key;
-    const cats = catIdxs.map(ci => `<span class="dupe-cat-tag">${allCategories[ci].subName || allCategories[ci].name}</span>`).join('');
-    return `<div class="dupe-item">
-      <div class="dupe-title">${film ? film.title : key} ${film && film.year ? `<span style="color:var(--text-dim);font-size:11px">(${film.year})</span>` : ''}</div>
-      <div class="dupe-cats">${cats}</div>
-    </div>`;
-  }).join('');
+  const cacheKey = `${title}|${year||''}`;
+  if (omdbCache.has(cacheKey)) {
+    content.innerHTML = renderModalData(omdbCache.get(cacheKey), title, year, catIndex);
+    return;
+  }
+
+  content.innerHTML = `<div class="modal-fetching">FETCHING DATA<span class="blink">_</span></div>`;
+
+  try {
+    const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}${year?'&y='+year:''}&apikey=${key}&plot=short`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.Response === 'True') {
+      omdbCache.set(cacheKey, data);
+      // Enrich directors
+      if (data.Director && catIndex >= 0) enrichDirectorFromOmdb(title, year, catIndex, data.Director);
+      content.innerHTML = renderModalData(data, title, year, catIndex);
+    } else {
+      content.innerHTML = renderModalNoData(title, year, catIndex, data.Error);
+    }
+  } catch(e) {
+    content.innerHTML = renderModalNoData(title, year, catIndex, 'Network error');
+  }
 }
 
-// ── DIRECTORS ──
-function renderDirectors() {
-  // Extract directors from film titles that have year — and from category descriptions
-  // Build a simple name-based index from all known directors in category texts
-  const mentions = {};
-  allCategories.forEach((cat, ci) => {
-    const text = cat.name + ' ' + (cat.desc || '');
-    // Match capitalized names
-    const names = text.match(/[A-ZÀÂÄÈÉÊËÎÏÔÙÛÜ][a-zàâäèéêëîïôùûü]+(?:\s+[A-ZÀÂÄÈÉÊËÎÏÔÙÛÜ][a-zàâäèéêëîïôùûü]+)*/g) || [];
-    names.forEach(n => {
-      if (n.length > 4 && !['Cinema','Drama','Comedy','Horror','Crime','Film','French','American','European','New','Wave','Hollywood'].includes(n)) {
-        if (!mentions[n]) mentions[n] = new Set();
-        mentions[n].add(ci);
-      }
-    });
-  });
+function renderModalData(data, title, year, catIndex) {
+  const siteWatched = getSiteWatched();
+  const key = normalizeTitle(title);
+  const fw = allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched
+             || siteWatched.has(key);
 
-  const directors = Object.entries(mentions)
-    .filter(([, cats]) => cats.size >= 1)
-    .sort((a, b) => b[1].size - a[1].size)
-    .slice(0, 60);
+  const catMatches = Object.entries(filmIndex)
+    .filter(([k]) => k === key)
+    .flatMap(([,idxs]) => idxs.map(i => allCategories[i]))
+    .filter(Boolean);
 
-  document.getElementById('director-grid').innerHTML = directors.map(([name, cats]) =>
-    `<div class="director-card" onclick="showDirectorDetail('${name.replace(/'/g,"\\'")}')">
-      <div class="director-name">${name}</div>
-      <div class="director-count">${cats.size} categor${cats.size === 1 ? 'y' : 'ies'}</div>
-    </div>`
-  ).join('');
+  const genres = (data.Genre||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const ratings = (data.Ratings||[]);
+  const rt = ratings.find(r => r.Source === 'Rotten Tomatoes');
 
-  // Store for detail
-  window._directorMentions = mentions;
-}
+  const posterHtml = (data.Poster && data.Poster !== 'N/A')
+    ? `<img src="${data.Poster}" alt="Poster" onerror="this.parentElement.innerHTML='<div class=modal-poster-placeholder><span>[NO\\nPOSTER]</span></div>'">`
+    : `<div class="modal-poster-placeholder"><span>[NO\nPOSTER]</span></div>`;
 
-function showDirectorDetail(name) {
-  const cats = window._directorMentions[name];
-  if (!cats) return;
-  const catList = [...cats].map(ci => {
-    const cat = allCategories[ci];
-    return `<div style="margin-bottom:12px">
-      <div style="font-size:12px;color:var(--gold-dim);margin-bottom:6px">${cat.name}</div>
-      <div class="film-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
-        ${cat.films.map(f => `<div class="film-item${f.watched?' watched':''}">
-          <div class="film-check">${f.watched?'✓':''}</div>
-          <div class="film-info"><div class="film-title">${f.title}</div>${f.year?`<div class="film-year">${f.year}</div>`:''}</div>
-        </div>`).join('')}
+  const line = s => `<div class="modal-divider">════════════════════════════════</div>`;
+
+  return `<div class="modal-body">
+    <div class="modal-poster">${posterHtml}</div>
+    <div class="modal-meta">
+      <div class="modal-title">${data.Title || title}</div>
+      <div class="modal-attrs">${[data.Year,data.Rated,data.Runtime].filter(v=>v&&v!=='N/A').join(' · ')}</div>
+      <div class="modal-genres">${genres.map(g=>`<span class="genre-chip">${g}</span>`).join('')}</div>
+      ${data.imdbRating && data.imdbRating!=='N/A' ? `<div class="modal-rating">★ ${data.imdbRating}/10 <span style="color:var(--dim);font-size:10px">(${data.imdbVotes} votes)</span></div>` : ''}
+      ${rt ? `<div class="modal-row"><strong>RT</strong> ${rt.Value}</div>` : ''}
+      <div class="modal-plot">${data.Plot||''}</div>
+      ${data.Director&&data.Director!=='N/A'?`<div class="modal-row"><strong>Director</strong> ${data.Director}</div>`:''}
+      ${data.Writer&&data.Writer!=='N/A'?`<div class="modal-row"><strong>Writer</strong> ${data.Writer.split(',').slice(0,3).join(', ')}</div>`:''}
+      ${data.Actors&&data.Actors!=='N/A'?`<div class="modal-row"><strong>Cast</strong> ${data.Actors.split(',').slice(0,3).join(', ')}</div>`:''}
+      ${data.Language&&data.Language!=='N/A'?`<div class="modal-row"><strong>Language</strong> ${data.Language}</div>`:''}
+      ${data.Country&&data.Country!=='N/A'?`<div class="modal-row"><strong>Country</strong> ${data.Country}</div>`:''}
+      ${data.Awards&&data.Awards!=='N/A'?`<div class="modal-row"><strong>Awards</strong> ${data.Awards}</div>`:''}
+      ${line()}
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px">IN YOUR CANON:</div>
+      <div class="modal-cats">${catMatches.map(c=>`<span class="modal-cat-tag">${c.subName||c.name}</span>`).join('') || '<span style="color:var(--dim);font-size:11px">—</span>'}</div>
+      ${line()}
+      <div class="modal-watched-row">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim)">STATUS:</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${fw?'var(--green)':'var(--red)'}">
+          ${fw ? '█ WATCHED' : '× UNWATCHED'}
+        </span>
+        ${!allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched
+          ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw ? '[ UNMARK ]' : '[ MARK WATCHED ]'}</button>`
+          : '<span style="font-size:10px;color:var(--dim)">set in .md file</span>'}
       </div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('director-detail').innerHTML = `
-    <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border)">
-      <div class="section-title">${name} — All Categories</div>
-      ${catList}
-    </div>`;
+    </div>
+  </div>`;
 }
 
-// ── WATCH NEXT ──
-function suggestRandom() {
+function renderModalNoKey(title, year, catIndex) {
+  return `<div class="modal-meta" style="padding:28px">
+    <div class="modal-title">${title}${year?` (${year})`:''}</div>
+    <div class="px-divider">════════════════════════════════</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);line-height:1.8">
+      No OMDb key set. Film metadata requires an API key.<br>
+      Get a free key at <strong style="color:var(--text)">omdbapi.com</strong> then set it in Settings.
+    </div>
+    <button class="modal-watch-btn" style="margin-top:16px" onclick="closeModalDirect();showOmdbPrompt('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">[ ENTER KEY ]</button>
+  </div>`;
+}
+
+function renderModalNoData(title, year, catIndex, err) {
   const siteWatched = getSiteWatched();
-  const unwatched = [];
-  allCategories.forEach((cat, ci) => {
-    cat.films.forEach(f => {
-      if (!f.watched && !siteWatched.has(normalizeTitle(f.title))) {
-        unwatched.push({ film: f, cat });
-      }
-    });
-  });
-  if (!unwatched.length) { showSuggestions([]); return; }
-  const picks = [];
-  for (let i = 0; i < 5; i++) {
-    picks.push(unwatched[Math.floor(Math.random() * unwatched.length)]);
+  const key = normalizeTitle(title);
+  const fw = allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched || siteWatched.has(key);
+  const catMatches = Object.entries(filmIndex).filter(([k])=>k===key).flatMap(([,idxs])=>idxs.map(i=>allCategories[i])).filter(Boolean);
+
+  return `<div class="modal-meta" style="padding:28px">
+    <div class="modal-title">${title}${year?` (${year})`:''}</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin:8px 0">${err||'Not found in OMDb'}</div>
+    <div class="px-divider">════════════════════════════════</div>
+    <div class="modal-cats">${catMatches.map(c=>`<span class="modal-cat-tag">${c.subName||c.name}</span>`).join('') || ''}</div>
+    <div class="modal-watched-row" style="margin-top:12px">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${fw?'var(--green)':'var(--red)'}">
+        ${fw ? '█ WATCHED' : '× UNWATCHED'}
+      </span>
+      ${!allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched
+        ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw ? '[ UNMARK ]' : '[ MARK WATCHED ]'}</button>`
+        : ''}
+    </div>
+  </div>`;
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-content').innerHTML = '';
+}
+
+// ══════════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════════
+function setWatchFilter(f, btn) {
+  currentWatchFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCanon();
+}
+
+let searchDebTimer = null;
+function handleSearch(val) {
+  clearTimeout(searchDebTimer);
+  searchDebTimer = setTimeout(() => {
+    currentSearch = val;
+    renderCanon();
+  }, 200);
+}
+
+function toggleFilterBar() {
+  const fb = document.getElementById('filter-bar');
+  fb.style.display = fb.style.display === 'none' ? 'block' : 'none';
+}
+
+function buildDecadeButtons() {
+  const decades = [1920,1930,1940,1950,1960,1970,1980,1990,2000,2010,2020];
+  document.getElementById('decade-btns').innerHTML = decades.map(d =>
+    `<button class="decade-btn" onclick="toggleDecade(${d},this)">${d}s</button>`
+  ).join('');
+}
+
+function toggleDecade(decade, btn) {
+  if (activeDecades.has(decade)) {
+    activeDecades.delete(decade);
+    btn.classList.remove('active');
+  } else {
+    activeDecades.add(decade);
+    btn.classList.add('active');
   }
-  showSuggestions(picks, 'Random picks from your unwatched');
+  renderCanon();
 }
 
-function suggestByGap() {
+function handleRangeChange() {
+  let mn = parseInt(document.getElementById('range-min').value);
+  let mx = parseInt(document.getElementById('range-max').value);
+  if (mn > mx) [mn, mx] = [mx, mn];
+  rangeMin = mn; rangeMax = mx;
+  document.getElementById('range-label').textContent = `${mn} — ${mx}`;
+  renderCanon();
+}
+
+function clearAllFilters() {
+  currentWatchFilter = 'all';
+  currentSearch = '';
+  activeDecades.clear();
+  rangeMin = 1920; rangeMax = 2025;
+  activeSuperCat = 'ALL';
+  document.getElementById('search-input').value = '';
+  document.getElementById('range-min').value = 1920;
+  document.getElementById('range-max').value = 2025;
+  document.getElementById('range-label').textContent = '1920 — 2025';
+  document.getElementById('sort-select').value = 'default';
+  document.querySelectorAll('.decade-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.filter-btn').classList.add('active');
+  buildSuperTabs();
+  buildCatNav();
+  renderCanon();
+}
+
+function updateFilterSummary(container) {
   const siteWatched = getSiteWatched();
-  // Find category with most unwatched but some watched (most in-progress)
-  const catGaps = allCategories.map((cat, ci) => {
-    const watched = cat.films.filter(f => f.watched || siteWatched.has(normalizeTitle(f.title))).length;
-    const total = cat.films.length;
-    const gap = total - watched;
-    return { cat, ci, watched, total, gap, pct: watched / total };
-  }).filter(c => c.watched > 0 && c.gap > 0)
-    .sort((a, b) => b.gap - a.gap);
+  let filmCount = 0;
+  container.querySelectorAll('.film-item').forEach(() => filmCount++);
 
-  const picks = [];
-  catGaps.slice(0, 3).forEach(({ cat }) => {
-    const unwatched = cat.films.filter(f => !f.watched && !siteWatched.has(normalizeTitle(f.title)));
-    if (unwatched.length) picks.push({ film: unwatched[0], cat, why: `Biggest gap category` });
-  });
-  showSuggestions(picks, 'From your most incomplete categories');
+  const parts = [];
+  if (activeDecades.size > 0) parts.push([...activeDecades].sort().map(d => d+'s').join('/'));
+  if (rangeMin > 1920 || rangeMax < 2025) parts.push(`${rangeMin}–${rangeMax}`);
+  if (currentWatchFilter !== 'all') parts.push(currentWatchFilter.charAt(0).toUpperCase()+currentWatchFilter.slice(1));
+  if (currentSearch) parts.push(`"${currentSearch}"`);
+  if (activeSuperCat !== 'ALL') parts.push(activeSuperCat);
+
+  const el = document.getElementById('filter-summary');
+  if (!el) return;
+  if (parts.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `<span>Showing:</span> <span class="filter-summary-text">${parts.join(' · ')} · ${filmCount} films</span> <button class="clear-filters" onclick="clearAllFilters()">[×] Clear</button>`;
 }
 
-function suggestArthouse() {
-  const siteWatched = getSiteWatched();
-  const arthouseKeywords = ['auteur','philosophical','new wave','experimental','avant-garde','art-house','slow cinema'];
-  const arthouseCats = allCategories.filter(cat =>
-    arthouseKeywords.some(kw => cat.name.toLowerCase().includes(kw) || (cat.desc||'').toLowerCase().includes(kw))
-  );
-  const picks = [];
-  arthouseCats.forEach(cat => {
-    const unwatched = cat.films.filter(f => !f.watched && !siteWatched.has(normalizeTitle(f.title)));
-    if (unwatched.length) picks.push({ film: unwatched[Math.floor(Math.random() * unwatched.length)], cat });
-  });
-  showSuggestions(picks.slice(0, 5), 'From arthouse & auteur categories');
-}
-
-function suggestRecent() {
-  const siteWatched = getSiteWatched();
-  const unwatched = [];
-  allCategories.forEach(cat => {
-    cat.films.forEach(f => {
-      if (!f.watched && !siteWatched.has(normalizeTitle(f.title)) && f.year) {
-        unwatched.push({ film: f, cat });
-      }
-    });
-  });
-  unwatched.sort((a, b) => b.film.year - a.film.year);
-  showSuggestions(unwatched.slice(0, 5), 'Most recent unwatched');
-}
-
-function suggestOldest() {
-  const siteWatched = getSiteWatched();
-  const unwatched = [];
-  allCategories.forEach(cat => {
-    cat.films.forEach(f => {
-      if (!f.watched && !siteWatched.has(normalizeTitle(f.title)) && f.year) {
-        unwatched.push({ film: f, cat });
-      }
-    });
-  });
-  unwatched.sort((a, b) => a.film.year - b.film.year);
-  showSuggestions(unwatched.slice(0, 5), 'Oldest unwatched — the deep canon');
-}
-
-function showSuggestions(picks, label = '') {
-  if (!picks.length) {
-    document.getElementById('suggestions').innerHTML = '<div class="empty-state"><div class="big">🎉</div>You\'ve watched everything!</div>';
-    return;
-  }
-  document.getElementById('suggestions').innerHTML = `
-    ${label ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;letter-spacing:0.1em;text-transform:uppercase">${label}</div>` : ''}
-    ${picks.map(p => `
-      <div class="suggestion-result">
-        <div class="suggestion-film">${p.film.title}${p.film.year ? ` <span style="font-size:0.8em;color:var(--text-dim)">(${p.film.year})</span>` : ''}</div>
-        <div class="suggestion-cat">${p.cat.name}</div>
-        ${p.why ? `<div class="suggestion-why">${p.why}</div>` : ''}
-      </div>`).join('')}
-  `;
-}
-
-// ── GLOBAL STATS BAR ──
+// ══════════════════════════════════════════════
+// GLOBAL STATS BAR
+// ══════════════════════════════════════════════
 function updateGlobalStats() {
   const siteWatched = getSiteWatched();
   let total = 0, watched = 0;
-  allCategories.forEach(cat => {
-    cat.films.forEach(f => {
-      total++;
-      if (f.watched || siteWatched.has(normalizeTitle(f.title))) watched++;
-    });
-  });
-  const pct = total > 0 ? Math.round(watched / total * 100) : 0;
+  allCategories.forEach(cat => cat.films.forEach(f => {
+    total++;
+    if (f.watched || siteWatched.has(normalizeTitle(f.title))) watched++;
+  }));
+  const pct = total > 0 ? watched / total : 0;
+  const filledSegs = Math.round(pct * 10);
+  const segs = Array.from({length:10}, (_,i) =>
+    `<div class="px-seg${i < filledSegs ? ' filled' : ''}"></div>`
+  ).join('');
+
   document.getElementById('global-stats').innerHTML = `
     <div class="stat-row">
       <span class="stat-label">Progress</span>
       <span class="stat-value">${watched}/${total}</span>
     </div>
-    <div class="progress-bar-outer">
-      <div class="progress-bar-inner" style="width:${pct}%"></div>
-    </div>
-    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;text-align:right">${pct}% of the canon</div>
+    <div class="px-bar">${segs}</div>
+    <div class="px-bar-label">${Math.round(pct*100)}% of the canon</div>
   `;
-  document.getElementById('topbar-info').textContent = `${watched} watched · ${total - watched} remaining`;
+  document.getElementById('topbar-info').textContent = `${watched} watched · ${total-watched} remaining`;
 }
 
-// ── NAV ──
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
 function scrollToCategory(ci) {
-  document.querySelectorAll('.cat-nav-item').forEach(el => el.classList.remove('active'));
-  document.getElementById(`nav-${ci}`)?.classList.add('active');
+  updateNavActive(ci);
   showView('canon', document.querySelector('.view-btn'));
-  setTimeout(() => {
-    document.getElementById(`cat-${ci}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 50);
+  setTimeout(() => document.getElementById(`cat-${ci}`)?.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
 }
 
 function showView(view, btn) {
@@ -1269,28 +2036,360 @@ function showView(view, btn) {
   if (view === 'stats') renderStats();
   if (view === 'dupes') renderDupes();
   if (view === 'directors') renderDirectors();
-  if (view === 'next') {
-    document.getElementById('suggestions').innerHTML = '<div style="color:var(--text-dim);font-size:13px">Pick a mode above to get suggestions.</div>';
-  }
-}
-
-function setFilter(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderCanon(currentFilter, currentSearch);
-}
-
-function handleSearch(val) {
-  currentSearch = val;
-  renderCanon(currentFilter, currentSearch);
+  if (view === 'next') initWatchNext();
 }
 
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
-// ── INIT ──
+// ══════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════
+function renderStats() {
+  const siteWatched = getSiteWatched();
+  let totalFilms=0, totalWatched=0;
+  const decadeMap={};
+  const catData=[];
+
+  allCategories.forEach(cat => {
+    let cw=0;
+    cat.films.forEach(f => {
+      totalFilms++;
+      const fw = f.watched || siteWatched.has(normalizeTitle(f.title));
+      if (fw) { totalWatched++; cw++; }
+      if (f.year) {
+        const d = Math.floor(f.year/10)*10;
+        if (!decadeMap[d]) decadeMap[d] = {total:0,watched:0};
+        decadeMap[d].total++;
+        if (fw) decadeMap[d].watched++;
+      }
+    });
+    catData.push({name: cat.subName||cat.name, desc: cat.desc||'', total: cat.films.length, watched: cw});
+  });
+
+  const pct = Math.round(totalWatched/totalFilms*100);
+  document.getElementById('stats-cards').innerHTML = [
+    ['Total in Canon', totalFilms, `across ${allCategories.length} categories`],
+    ['Watched', totalWatched, `${pct}% complete`],
+    ['Remaining', totalFilms-totalWatched, 'still to see'],
+    ['Categories', allCategories.length, `${catData.filter(c=>c.watched===c.total&&c.total>0).length} fully completed`]
+  ].map(([label,val,sub]) =>
+    `<div class="stat-card">
+      <div class="stat-card-label">${label}</div>
+      <div class="stat-card-value">${val}</div>
+      <div class="stat-card-sub">${sub}</div>
+    </div>`
+  ).join('');
+
+  // Decade heatmap
+  const decades = Object.keys(decadeMap).map(Number).sort();
+  let hmHtml = `<div class="decade-grid" style="grid-template-columns:50px repeat(${decades.length},1fr)">`;
+  hmHtml += `<div></div>`;
+  decades.forEach(d => { hmHtml += `<div class="heatmap-col-header">${d}s</div>`; });
+  hmHtml += `<div class="decade-label">All</div>`;
+  decades.forEach(d => {
+    const data = decadeMap[d];
+    const p = data.total > 0 ? data.watched/data.total : 0;
+    const bg = p===0 ? '#141414' : p<0.25 ? '#1a2a1a' : p<0.5 ? '#203a20' : p<0.75 ? 'var(--green)' : 'var(--gold)';
+    hmHtml += `<div class="heatmap-cell" style="background:${bg}" title="${data.watched}/${data.total} in ${d}s">
+      <span style="font-family:'Share Tech Mono',monospace;color:${p>0.5?'#000':'var(--dim)'};">${data.watched}</span>
+    </div>`;
+  });
+  hmHtml += '</div>';
+  document.getElementById('heatmap').innerHTML = hmHtml;
+
+  // Blind spots: watched/total < 0.1 AND total > 5
+  const blindSpots = catData.filter(c => c.total > 5 && c.watched/c.total < 0.1)
+    .sort((a,b) => a.watched/a.total - b.watched/b.total);
+  document.getElementById('blind-spots').innerHTML = blindSpots.length
+    ? blindSpots.map(c => `<div class="blind-spot-item">
+        <div class="blind-spot-name">${c.name}</div>
+        <div class="blind-spot-stats">${c.watched}/${c.total} watched (${Math.round(c.watched/c.total*100)}%)</div>
+        ${c.desc ? `<div class="blind-spot-desc">${c.desc}</div>` : ''}
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:12px">No significant blind spots — well-rounded canon!</div>';
+
+  // Category completion (pixel bars, 10 segs)
+  const sorted = [...catData].sort((a,b) => (b.watched/b.total||0)-(a.watched/a.total||0));
+  document.getElementById('cat-completion').innerHTML = sorted.map(c => {
+    const p = c.total > 0 ? c.watched/c.total : 0;
+    const filled = Math.round(p*10);
+    const segs = Array.from({length:10}, (_,i) =>
+      `<div class="cat-comp-seg${i<filled?' filled':''}"></div>`
+    ).join('');
+    return `<div class="cat-completion-item">
+      <div class="cat-completion-name">${c.name}</div>
+      <div class="cat-completion-bar">${segs}</div>
+      <div class="cat-completion-pct">${Math.round(p*100)}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════
+function exportWatched() {
+  const siteWatched = getSiteWatched();
+  let txt = 'TAXOGEEK — WATCHED LIST\n' + '═'.repeat(40) + '\n\n';
+  allCategories.forEach(cat => {
+    const watched = cat.films.filter(f => f.watched || siteWatched.has(normalizeTitle(f.title)));
+    if (!watched.length) return;
+    txt += `${cat.name}\n${'-'.repeat(cat.name.length)}\n`;
+    watched.forEach(f => { txt += `  ${f.title}${f.year?' ('+f.year+')':''}\n`; });
+    txt += '\n';
+  });
+  const blob = new Blob([txt], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'taxogeek-watched.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ══════════════════════════════════════════════
+// DUPES
+// ══════════════════════════════════════════════
+function renderDupes() {
+  const dupes = Object.entries(filmIndex)
+    .filter(([,cats]) => cats.length > 1)
+    .sort((a,b) => b[1].length-a[1].length);
+
+  if (!dupes.length) {
+    document.getElementById('dupes-content').innerHTML = '<div class="empty-state">No duplicates found.</div>';
+    return;
+  }
+  document.getElementById('dupes-content').innerHTML = dupes.map(([key, catIdxs]) => {
+    const film = allCategories[catIdxs[0]].films.find(f => normalizeTitle(f.title) === key);
+    const cats = catIdxs.map(ci => `<span class="dupe-cat-tag">${allCategories[ci].subName||allCategories[ci].name}</span>`).join('');
+    return `<div class="dupe-item">
+      <div class="dupe-title">${film?film.title:key} ${film&&film.year?`<span style="color:var(--dim);font-size:10px">(${film.year})</span>`:''}</div>
+      <div class="dupe-cats">${cats}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// DIRECTORS (memoized)
+// ══════════════════════════════════════════════
+let _directorsCacheHtml = null;
+function renderDirectors() {
+  if (directorsCached && _directorsCacheHtml) {
+    document.getElementById('director-grid').innerHTML = _directorsCacheHtml;
+    return;
+  }
+
+  const siteWatched = getSiteWatched();
+  const dirs = Object.entries(directorIndex)
+    .filter(([, d]) => d.films.length >= 2)
+    .sort((a,b) => b[1].films.length - a[1].films.length);
+
+  _directorsCacheHtml = dirs.map(([name, d]) => {
+    const watched = d.films.filter(e => e.film.watched || siteWatched.has(normalizeTitle(e.film.title))).length;
+    const total = d.films.length;
+    const segs = Array.from({length:Math.min(total,10)}, (_,i) =>
+      `<div class="cat-comp-seg${i<Math.round(watched/total*Math.min(total,10))?' filled':''}"></div>`
+    ).join('');
+    return `<div class="director-card" onclick="showDirectorDetail('${name.replace(/'/g,"\\'")}')" title="${name}">
+      <div class="director-name">${name}</div>
+      <div class="director-count">${total} film${total!==1?'s':''} · ${watched} watched</div>
+      <div class="cat-completion-bar" style="margin-top:6px">${segs}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('director-grid').innerHTML = _directorsCacheHtml;
+  directorsCached = true;
+}
+
+function showDirectorDetail(name) {
+  const d = directorIndex[name];
+  if (!d) return;
+  const siteWatched = getSiteWatched();
+
+  // Group by category
+  const bycat = new Map();
+  d.films.forEach(e => {
+    const k = e.catName;
+    if (!bycat.has(k)) bycat.set(k, { desc: allCategories[e.catIndex]?.desc||'', films:[] });
+    bycat.get(k).films.push(e.film);
+  });
+
+  let html = `<div class="director-detail-panel">
+    <div class="section-title">${name} — Films in Canon</div>`;
+
+  bycat.forEach((data, catName) => {
+    html += `<div style="margin-bottom:12px">
+      <div style="font-family:'IM Fell English',serif;font-size:13px;color:var(--gold-dim);margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:3px">${catName}</div>
+      ${data.desc ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;font-style:italic">${data.desc}</div>` : ''}
+      ${data.films.map(f => {
+        const fw = f.watched || siteWatched.has(normalizeTitle(f.title));
+        return `<div class="director-film-row">
+          <span class="director-film-title">${f.title}</span>
+          ${f.year?`<span class="director-film-year">${f.year}</span>`:''}
+          <span class="director-film-status">${fw ? '█' : '·'}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('director-detail').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// WATCH NEXT
+// ══════════════════════════════════════════════
+function setTime(mins, btn) {
+  sessionTime = mins;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function initWatchNext() {
+  document.getElementById('suggestions').innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--dim)">Pick a mode to get suggestions.</div>';
+}
+
+function getUnwatched() {
+  const siteWatched = getSiteWatched();
+  const arr = [];
+  allCategories.forEach((cat, ci) => {
+    cat.films.forEach(f => {
+      if (!f.watched && !siteWatched.has(normalizeTitle(f.title))) {
+        arr.push({ film:f, cat, ci });
+      }
+    });
+  });
+  return arr;
+}
+
+function filterByTime(picks) {
+  if (!sessionTime) return picks;
+  return picks.filter(p => {
+    const cacheKey = `${p.film.title}|${p.film.year||''}`;
+    const data = omdbCache.get(cacheKey);
+    if (!data || !data.Runtime || data.Runtime === 'N/A') return true; // no data, include
+    const mins = parseInt(data.Runtime);
+    if (isNaN(mins)) return true;
+    return mins <= sessionTime;
+  });
+}
+
+function suggestRandom() {
+  let pool = getUnwatched();
+  pool = filterByTime(pool);
+  if (!pool.length) { showSuggestions([]); return; }
+  const picks = [];
+  for (let i=0; i<5; i++) picks.push(pool[Math.floor(Math.random()*pool.length)]);
+  showSuggestions(picks, 'Random picks from your unwatched');
+}
+
+function suggestByGap() {
+  const siteWatched = getSiteWatched();
+  const catGaps = allCategories.map((cat,ci) => {
+    const watched = cat.films.filter(f => f.watched||siteWatched.has(normalizeTitle(f.title))).length;
+    const gap = cat.films.length - watched;
+    return {cat,ci,watched,gap};
+  }).filter(c => c.watched>0 && c.gap>0).sort((a,b) => b.gap-a.gap);
+
+  let picks = [];
+  catGaps.slice(0,3).forEach(({cat,ci}) => {
+    const unwatched = cat.films.filter(f => !f.watched && !siteWatched.has(normalizeTitle(f.title)));
+    if (unwatched.length) picks.push({film:unwatched[0], cat, ci, why:'Biggest gap category'});
+  });
+  picks = filterByTime(picks);
+  showSuggestions(picks, 'From your most incomplete categories');
+}
+
+function suggestArthouse() {
+  const siteWatched = getSiteWatched();
+  const kw = ['auteur','philosophical','new wave','experimental','avant-garde','art-house','slow cinema'];
+  let picks = [];
+  allCategories.forEach((cat,ci) => {
+    const match = kw.some(w => cat.name.toLowerCase().includes(w)||(cat.desc||'').toLowerCase().includes(w));
+    if (!match) return;
+    const uw = cat.films.filter(f => !f.watched&&!siteWatched.has(normalizeTitle(f.title)));
+    if (uw.length) picks.push({film:uw[Math.floor(Math.random()*uw.length)], cat, ci});
+  });
+  picks = filterByTime(picks).slice(0,5);
+  showSuggestions(picks, 'From arthouse & auteur categories');
+}
+
+function suggestRecent() {
+  let pool = getUnwatched().filter(p => p.film.year);
+  pool.sort((a,b) => b.film.year-a.film.year);
+  pool = filterByTime(pool);
+  showSuggestions(pool.slice(0,5), 'Most recent unwatched');
+}
+
+function suggestOldest() {
+  let pool = getUnwatched().filter(p => p.film.year);
+  pool.sort((a,b) => a.film.year-b.film.year);
+  pool = filterByTime(pool);
+  showSuggestions(pool.slice(0,5), 'Oldest unwatched — the deep canon');
+}
+
+function showSuggestions(picks, label='') {
+  if (!picks.length) {
+    document.getElementById('suggestions').innerHTML = '<div class="empty-state">Nothing found. Try a different mode or clear the time filter.</div>';
+    return;
+  }
+  const timeNote = sessionTime > 0 && !getOmdbKey()
+    ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:12px">Note: Runtime filtering requires OMDb film data to be loaded for each film.</div>` : '';
+
+  document.getElementById('suggestions').innerHTML = `
+    ${label?`<div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:14px;letter-spacing:0.1em;text-transform:uppercase">${label}</div>`:''}
+    ${timeNote}
+    ${picks.map((p,i) => `
+      <div class="suggestion-result${i===selectedSuggestion?' active-suggestion':''}" id="sug-${i}">
+        <div class="suggestion-film" onclick="openFilmModal('${p.film.title.replace(/'/g,"\\'")}',${p.film.year||'null'},${p.ci})" style="cursor:pointer">${p.film.title}${p.film.year?` <span style="font-size:0.8em;color:var(--dim)">(${p.film.year})</span>`:''}</div>
+        <div class="suggestion-cat">${p.cat.name}</div>
+        ${p.why?`<div class="suggestion-why">${p.why}</div>`:''}
+      </div>`).join('')}
+  `;
+}
+
+// ══════════════════════════════════════════════
+// KEYBOARD NAVIGATION
+// ══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModalDirect();
+    document.getElementById('omdb-prompt').classList.remove('open');
+  }
+  if ((e.key === 'f' || e.key === '/') && document.activeElement !== document.getElementById('search-input') && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+  if (e.key === 'ArrowDown' && document.getElementById('view-next').classList.contains('active')) {
+    const sug = document.querySelectorAll('.suggestion-result');
+    if (sug.length) {
+      sug[selectedSuggestion]?.classList.remove('active-suggestion');
+      selectedSuggestion = Math.min(selectedSuggestion+1, sug.length-1);
+      sug[selectedSuggestion]?.classList.add('active-suggestion');
+      sug[selectedSuggestion]?.scrollIntoView({block:'nearest'});
+    }
+  }
+  if (e.key === 'ArrowUp' && document.getElementById('view-next').classList.contains('active')) {
+    const sug = document.querySelectorAll('.suggestion-result');
+    if (sug.length) {
+      sug[selectedSuggestion]?.classList.remove('active-suggestion');
+      selectedSuggestion = Math.max(selectedSuggestion-1, 0);
+      sug[selectedSuggestion]?.classList.add('active-suggestion');
+      sug[selectedSuggestion]?.scrollIntoView({block:'nearest'});
+    }
+  }
+});
+
+// ══════════════════════════════════════════════
+// SCROLL WATCHER (jump-to-top + active nav)
+// ══════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  document.getElementById('jump-top').classList.toggle('visible', window.scrollY > 400);
+});
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
 async function init() {
   try {
     const res = await fetch('movies.md');
@@ -1298,17 +2397,25 @@ async function init() {
     const text = await res.text();
     allCategories = parseMarkdown(text);
     buildIndexes(allCategories);
+    buildSuperTabs();
+    buildCatNav();
+    buildDecadeButtons();
     renderCanon();
     updateGlobalStats();
     document.getElementById('loader').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
-  } catch (err) {
+
+    // Show OMDb prompt on first load if no key and not skipped
+    if (!getOmdbKey() && !localStorage.getItem(LS_OMDB_SK)) {
+      // slight delay so user sees the app first
+      setTimeout(() => document.getElementById('omdb-prompt').classList.add('open'), 800);
+    }
+  } catch(err) {
     document.getElementById('loader').innerHTML = `
-      <div class="logo" style="color:var(--red)">Error</div>
+      <div class="logo" style="color:var(--red)">ERROR<span class="blink">_</span></div>
       <div class="sub">Could not load movies.md</div>
-      <div style="color:var(--text-dim);font-size:12px;margin-top:8px;max-width:300px;text-align:center">
-        Make sure <code style="color:var(--gold)">movies.md</code> is in the same folder as this file in your GitHub repo.
-        <br><br>${err.message}
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);margin-top:12px;max-width:320px;text-align:center;line-height:1.8">
+        Ensure <span style="color:var(--gold)">movies.md</span> is in the same folder as this file.<br>${err.message}
       </div>`;
   }
 }
