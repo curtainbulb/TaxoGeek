@@ -3,44 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TAXOGEEK — THE CANON</title>
+<title>TAXOGEEK // THE CANON</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- CRT overlay layers -->
+<!-- CRT overlays — sit on top of everything -->
 <div id="scanlines"></div>
 <div id="scan-sweep"></div>
 
-<!-- ══════════════════════════════════════════════
+<!-- ════════════════════════════════════════════
      BOOT SCREEN
-     ══════════════════════════════════════════════ -->
+     ════════════════════════════════════════════ -->
 <div id="loader">
   <div id="boot-logo">
-    <span class="corner tl">┌</span>
-    <span class="corner tr">┐</span>
-    <span class="corner bl">└</span>
-    <span class="corner br">┘</span>
-    <div class="logo-name">TAXOGEEK<span class="blink">_</span></div>
-    <div class="logo-sub">// THE PERSONAL CANON</div>
+    <div class="logo-name">TAXOGEEK</div>
+    <div class="logo-sub">// THE PERSONAL CANON — FILM INTELLIGENCE SYSTEM</div>
   </div>
   <div id="boot-lines"></div>
   <div class="boot-prompt">
-    READY<span class="px-spinner"><span></span><span></span><span></span></span>
+    INITIALIZING
+    <span class="px-spinner"><span></span><span></span><span></span></span>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
-     OMDB KEY PROMPT
-     ══════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════
+     OMDb API KEY PROMPT
+     ════════════════════════════════════════════ -->
 <div id="omdb-prompt">
   <div class="omdb-card">
-    <div class="omdb-title">▶ ENABLE FILM DETAILS — OMDB API</div>
+    <div class="omdb-title">// ENABLE FILM DATABASE ACCESS</div>
     <div class="omdb-text">
-      Enter your OMDb API key to load film metadata, posters, and ratings.<br><br>
-      Free key at <strong>omdbapi.com</strong> (1000 req/day).
+      An OMDb API key enables film metadata — posters, ratings, cast, plot.<br><br>
+      Free key at <strong style="color:var(--cyan)">omdbapi.com</strong>
+      (1,000 req/day, no credit card).
     </div>
-    <input class="omdb-input" id="omdb-key-input" type="text" placeholder="xxxxxxxx">
+    <input class="omdb-input" id="omdb-key-input" type="text" placeholder="paste key here...">
     <div class="omdb-btns">
       <button class="omdb-btn primary" onclick="saveOmdbKey()">[ SAVE KEY ]</button>
       <button class="omdb-btn" onclick="skipOmdbKey()">[ SKIP ]</button>
@@ -48,39 +46,38 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
+<!-- ════════════════════════════════════════════
      FILM DETAIL MODAL
-     ══════════════════════════════════════════════ -->
+     ════════════════════════════════════════════ -->
 <div id="modal-overlay" onclick="closeModal(event)">
   <div id="modal-card">
     <div id="modal-content"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════
+<!-- ════════════════════════════════════════════
      MAIN HUD — hidden until boot completes
-     ══════════════════════════════════════════════ -->
+     ════════════════════════════════════════════ -->
 <div id="screen">
 <div id="app" style="display:none">
 
   <!-- ── SIDEBAR — SYSTEM STATUS COLUMN ── -->
   <nav id="sidebar">
 
-    <!-- System header -->
+    <!-- System ID -->
     <div class="sys-header">
       <div class="sys-header-banner">
-        <span>SYS</span>
-        <span>TAXOGEEK v4.1</span>
-        <span>ONLINE</span>
+        <span>TAXOGEEK SYS</span>
+        <span class="blink">● ONLINE</span>
       </div>
       <div class="sys-id-block">
-        <div class="sys-logo">TAXOGEEK<span class="blink">_</span></div>
+        <div class="sys-logo">TAXOGEEK</div>
         <div class="sys-logo-sub">// THE PERSONAL CANON</div>
-        <div class="sys-build">BUILD 2024.12 · curtainbulb</div>
+        <div class="sys-build">BUILD 2024.12 · curtainbulb · v4.1</div>
       </div>
     </div>
 
-    <!-- Progress module -->
+    <!-- Progress telemetry -->
     <div class="status-module">
       <div class="module-label">◈ PROGRESS TELEMETRY</div>
       <div id="global-stats">
@@ -94,25 +91,26 @@
             <span class="readout-val">—</span>
           </div>
           <div class="seg-bar"></div>
+          <div class="seg-pct">—% COMPLETE</div>
         </div>
       </div>
     </div>
 
     <!-- Search -->
-    <div class="input-module">
-      <div class="module-label yellow">◈ SEARCH / QUERY</div>
+    <div class="input-module status-module">
+      <div class="module-label yellow">◈ QUERY / SEARCH</div>
       <div class="hud-input-wrap">
         <input class="hud-input" id="search-input" type="text"
-               placeholder="search films or categories..."
+               placeholder="search titles, categories..."
                oninput="handleSearch(this.value)">
       </div>
     </div>
 
-    <!-- Filter -->
+    <!-- Watch filter -->
     <div class="filter-row">
-      <button class="hud-filter-btn active" onclick="setWatchFilter('all', this)">ALL</button>
-      <button class="hud-filter-btn"        onclick="setWatchFilter('unwatched', this)">UNSEEN</button>
-      <button class="hud-filter-btn"        onclick="setWatchFilter('watched', this)">SEEN</button>
+      <button class="hud-filter-btn active" onclick="setWatchFilter('all',this)">ALL</button>
+      <button class="hud-filter-btn"        onclick="setWatchFilter('unwatched',this)">UNSEEN</button>
+      <button class="hud-filter-btn"        onclick="setWatchFilter('watched',this)">SEEN</button>
     </div>
 
     <!-- Super-cat tabs -->
@@ -123,39 +121,42 @@
 
   </nav>
 
-  <!-- ── MAIN PANEL AREA ── -->
+  <!-- ── MAIN CONTENT AREA ── -->
   <div id="main">
 
-    <!-- Topbar command strip -->
+    <!-- Topbar -->
     <div id="topbar">
-      <div class="topbar-banner">MODE</div>
-      <button class="view-btn active" onclick="showView('canon', this)">CANON</button>
-      <button class="view-btn"        onclick="showView('stats', this)">STATS</button>
-      <button class="view-btn"        onclick="showView('dupes', this)">DUPES</button>
-      <button class="view-btn"        onclick="showView('directors', this)">DIRECTORS</button>
-      <button class="view-btn"        onclick="showView('next', this)">WATCH NEXT</button>
+      <div class="topbar-banner">◈ MODE</div>
+
+      <button class="view-btn active" onclick="showView('canon',this)">CANON</button>
+      <button class="view-btn"        onclick="showView('stats',this)">STATS</button>
+      <button class="view-btn"        onclick="showView('dupes',this)">DUPES</button>
+      <button class="view-btn"        onclick="showView('directors',this)">DIRECTORS</button>
+      <button class="view-btn"        onclick="showView('next',this)">WATCH NEXT</button>
+
       <div class="topbar-spacer"></div>
+
       <span class="topbar-stat" id="topbar-stat"></span>
       <div class="topbar-clock" id="topbar-clock">00:00:00</div>
-      <button class="topbar-action" onclick="toggleCmdBar()">[ FILTERS ]</button>
-      <button class="topbar-action" onclick="expandAll()">[ + ALL ]</button>
-      <button class="topbar-action" onclick="collapseAll()">[ − ALL ]</button>
+      <button class="topbar-action" onclick="toggleCmdBar()">[ FILTER ]</button>
+      <button class="topbar-action" onclick="expandAll()">[ + ]</button>
+      <button class="topbar-action" onclick="collapseAll()">[ − ]</button>
     </div>
 
-    <!-- Command / filter bar -->
+    <!-- Filter / cmd bar -->
     <div id="cmd-bar">
       <div class="cmd-row">
-        <span class="cmd-label">Decade:</span>
+        <span class="cmd-label">DECADE</span>
         <div class="decade-btns" id="decade-btns"></div>
       </div>
       <div class="cmd-row">
-        <span class="cmd-label">Year:</span>
+        <span class="cmd-label">YEAR</span>
         <div class="range-wrap">
           <span class="range-val" id="range-label">1920 — 2025</span>
           <input class="range-slider" type="range" id="range-min" min="1920" max="2025" value="1920" oninput="handleRangeChange()">
           <input class="range-slider" type="range" id="range-max" min="1920" max="2025" value="2025" oninput="handleRangeChange()">
         </div>
-        <span class="cmd-label" style="margin-left:14px">Sort:</span>
+        <span class="cmd-label" style="margin-left:18px">SORT</span>
         <select class="sort-select" id="sort-select" onchange="renderCanon()">
           <option value="default">Default</option>
           <option value="year-asc">Year ↑</option>
@@ -168,13 +169,16 @@
       <div class="cmd-summary" id="cmd-summary"></div>
     </div>
 
-    <!-- ── CANON VIEW ── -->
+    <!-- ── PANELS ── -->
+
+    <!-- CANON -->
     <div class="panel active" id="view-canon">
       <div id="canon-content"></div>
     </div>
 
-    <!-- ── STATS VIEW ── -->
+    <!-- STATS -->
     <div class="panel" id="view-stats">
+
       <div class="hud-section">
         <div class="hud-section-head">
           <span class="hud-section-label">◈ SYSTEM METRICS</span>
@@ -189,9 +193,9 @@
           <div class="hud-section-line"></div>
         </div>
         <div class="legend">
-          <span class="legend-item"><span class="legend-dot" style="background:#0a0e14"></span>ZERO</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#0d2a1e"></span>LOW</span>
-          <span class="legend-item"><span class="legend-dot" style="background:var(--green-dim)"></span>MED</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#080d12"></span>ZERO</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#0a2018"></span>LOW</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--grn-dim)"></span>MED</span>
           <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>HIGH</span>
         </div>
         <div id="heatmap"></div>
@@ -199,7 +203,7 @@
 
       <div class="hud-section">
         <div class="hud-section-head">
-          <span class="hud-section-label" style="background:var(--red-dim);color:var(--red)">⚠ TAXONOMIC BLIND SPOTS</span>
+          <span class="hud-section-label red-label">⚠ BLIND SPOTS — TAXONOMIC GAPS</span>
           <div class="hud-section-line"></div>
         </div>
         <div id="blind-spots"></div>
@@ -210,45 +214,49 @@
           <span class="hud-section-label">◈ CATEGORY COMPLETION</span>
           <div class="hud-section-line"></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-          <button class="topbar-action" style="border:1px solid var(--border-bright);padding:4px 12px" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="suggest-btn" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
         </div>
         <div class="cat-comp-list" id="cat-completion"></div>
       </div>
+
     </div>
 
-    <!-- ── DUPES VIEW ── -->
+    <!-- DUPES -->
     <div class="panel" id="view-dupes">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txt-lo);margin-bottom:16px;letter-spacing:0.08em">
-        &gt; FILMS INDEXED ACROSS MULTIPLE CATEGORIES — TAXONOMICALLY SIGNIFICANT CROSS-LISTINGS.
+      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:20px;letter-spacing:0.06em;line-height:1.8">
+        Films indexed across multiple categories — cross-listed entries reflect the taxonomy's intentional overlaps.
       </div>
       <div id="dupes-content"></div>
     </div>
 
-    <!-- ── DIRECTORS VIEW ── -->
+    <!-- DIRECTORS -->
     <div class="panel" id="view-directors">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--txt-lo);margin-bottom:16px;letter-spacing:0.08em">
-        &gt; DIRECTORS WITH 2+ FILMS IN CANON. EXTRACTED FROM TAXONOMY + OMDb DATA.
+      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:20px;letter-spacing:0.06em;line-height:1.8">
+        Directors with 2+ films in the canon. Extracted from taxonomy structure + OMDb data (open a film first to enrich).
       </div>
       <div class="director-grid" id="director-grid"></div>
       <div id="director-detail"></div>
     </div>
 
-    <!-- ── WATCH NEXT VIEW ── -->
+    <!-- WATCH NEXT -->
     <div class="panel" id="view-next">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:18px">
+        Select a session length, then pick a transmission mode.
+      </div>
       <div class="time-row">
         <span class="time-label">SESSION:</span>
         <button class="time-btn active" onclick="setTime(0,this)">ANY</button>
-        <button class="time-btn" onclick="setTime(60,this)">1H</button>
-        <button class="time-btn" onclick="setTime(90,this)">1.5H</button>
-        <button class="time-btn" onclick="setTime(120,this)">2H</button>
-        <button class="time-btn" onclick="setTime(150,this)">2.5H</button>
-        <button class="time-btn" onclick="setTime(180,this)">3H+</button>
+        <button class="time-btn" onclick="setTime(60,this)">60 MIN</button>
+        <button class="time-btn" onclick="setTime(90,this)">90 MIN</button>
+        <button class="time-btn" onclick="setTime(120,this)">2 HR</button>
+        <button class="time-btn" onclick="setTime(150,this)">2.5 HR</button>
+        <button class="time-btn" onclick="setTime(180,this)">3 HR+</button>
       </div>
       <div class="suggest-controls">
         <button class="suggest-btn" onclick="suggestRandom()">[ SURPRISE ME ]</button>
-        <button class="suggest-btn" onclick="suggestByGap()">[ FILL GAP ]</button>
-        <button class="suggest-btn" onclick="suggestArthouse()">[ ARTHOUSE ]</button>
+        <button class="suggest-btn" onclick="suggestByGap()">[ FILL BLIND SPOT ]</button>
+        <button class="suggest-btn" onclick="suggestArthouse()">[ ARTHOUSE MODE ]</button>
         <button class="suggest-btn" onclick="suggestRecent()">[ MOST RECENT ]</button>
         <button class="suggest-btn" onclick="suggestOldest()">[ DEEP ARCHIVE ]</button>
       </div>
@@ -259,10 +267,7 @@
 </div><!-- /#app -->
 </div><!-- /#screen -->
 
-<!-- Jump to top -->
 <button id="jump-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
-
-<!-- Mobile sidebar toggle -->
 <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
 
 <script src="main.js"></script>

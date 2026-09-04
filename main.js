@@ -78,6 +78,44 @@ function setSiteWatched(set) { localStorage.setItem(LS_KEY, JSON.stringify([...s
 function getOmdbKey() { return localStorage.getItem(LS_OMDB) || ''; }
 
 // ══════════════════════════════════════════════
+// BRACKET CORNERS — inject ┌ ┐ └ ┘ into elements
+// ══════════════════════════════════════════════
+function addBrackets(el, variant) {
+  // Remove any existing bracket spans
+  el.querySelectorAll('.bk-tl,.bk-tr,.bk-bl,.bk-br').forEach(s => s.remove());
+  const chars = { tl:'┌', tr:'┐', bl:'└', br:'┘' };
+  Object.entries(chars).forEach(([pos, ch]) => {
+    const s = document.createElement('span');
+    s.className = `bk-${pos}`;
+    s.textContent = ch;
+    if (variant) s.dataset.variant = variant;
+    el.appendChild(s);
+  });
+}
+
+// Add brackets to static elements after DOM ready
+function initStaticBrackets() {
+  // Modal card
+  const modalCard = document.getElementById('modal-card');
+  if (modalCard) addBrackets(modalCard);
+
+  // OMDb card
+  const omdbCard = document.querySelector('.omdb-card');
+  if (omdbCard) addBrackets(omdbCard, 'cyan');
+
+  // Boot logo
+  const bootLogo = document.getElementById('boot-logo');
+  if (bootLogo) {
+    ['tr','bl','br'].forEach(pos => {
+      const s = document.createElement('span');
+      s.className = `corner-${pos}`;
+      s.textContent = pos==='tr'?'┐':pos==='bl'?'└':'┘';
+      bootLogo.appendChild(s);
+    });
+  }
+}
+
+// ══════════════════════════════════════════════
 // CLOCK
 // ══════════════════════════════════════════════
 function startClock() {
@@ -153,6 +191,7 @@ async function runBoot(moviesText) {
   document.getElementById('app').style.display = 'flex';
 
   startClock();
+  initStaticBrackets();
 
   // OMDb prompt
   if (!getOmdbKey() && !localStorage.getItem(LS_OMDB_SK)) {
@@ -256,6 +295,7 @@ function enrichDirectorFromOmdb(title, year, catIndex, directorName) {
       }
     }
     directorsCached = false;
+    _directorsCacheHtml = null;
   });
 }
 
@@ -316,20 +356,33 @@ function renderCanon() {
   allCategories.forEach((cat, ci) => {
     if (activeSuperCat !== 'ALL' && cat.superCat !== activeSuperCat) return;
 
+    // Check if cat/desc matches search — used to show all films in a matching category
+    const catMatchesSearch = searchLower && (
+      cat.name.toLowerCase().includes(searchLower) ||
+      (cat.desc||'').toLowerCase().includes(searchLower)
+    );
+
     let films = cat.films.filter(f => {
       const fw = f.watched || siteWatched.has(normalizeTitle(f.title));
       if (currentWatchFilter === 'watched'   && !fw) return false;
       if (currentWatchFilter === 'unwatched' &&  fw) return false;
-      if (f.year) {
-        const decade = Math.floor(f.year / 10) * 10;
-        if (activeDecades.size > 0 && !activeDecades.has(decade)) return false;
-        if (f.year < rangeMin || f.year > rangeMax) return false;
+
+      // Year/decade filter — only apply when search doesn't override via cat match
+      if (!catMatchesSearch) {
+        if (f.year) {
+          const decade = Math.floor(f.year / 10) * 10;
+          if (activeDecades.size > 0 && !activeDecades.has(decade)) return false;
+          if (f.year < rangeMin || f.year > rangeMax) return false;
+        } else {
+          // No year: exclude if decade filter is active (can't determine decade)
+          if (activeDecades.size > 0) return false;
+        }
       }
+
       if (searchLower) {
-        return f.title.toLowerCase().includes(searchLower) ||
-               (f.fullTitle||'').toLowerCase().includes(searchLower) ||
-               cat.name.toLowerCase().includes(searchLower) ||
-               (cat.desc||'').toLowerCase().includes(searchLower);
+        return catMatchesSearch ||
+               f.title.toLowerCase().includes(searchLower) ||
+               (f.fullTitle||'').toLowerCase().includes(searchLower);
       }
       return true;
     });
@@ -385,6 +438,7 @@ function renderCanon() {
     }
 
     html += `<div class="category-block${isDanger ? ' danger' : ''}" id="cat-${ci}">
+      <span class="bk-tl">┌</span><span class="bk-tr">┐</span><span class="bk-bl">└</span><span class="bk-br">┘</span>
       <div class="cat-header" onclick="toggleCategory(${ci})">
         <div class="cat-header-left">
           ${sectorLabel}
@@ -426,6 +480,12 @@ function renderFilmsWithFranchises(films, franchiseMap, siteWatched, searchLower
   });
 
   groups.forEach((ffilms, fname) => {
+    // Bug 10: only render franchise header if 2+ films visible after current filters
+    if (ffilms.length < 2) {
+      // Treat as solo films
+      html = `<div class="film-grid">${ffilms.map((f,i) => filmRowHtml(f, siteWatched, searchLower, ci, i)).join('')}</div>` + html;
+      return;
+    }
     const watched = ffilms.filter(f => f.watched || siteWatched.has(normalizeTitle(f.title))).length;
     html += `<div class="franchise-group">
       <div class="franchise-hdr">
@@ -605,14 +665,30 @@ function clearAllFilters() {
   activeDecades.clear();
   rangeMin = 1920; rangeMax = 2025;
   activeSuperCat = 'ALL';
+
   document.getElementById('search-input').value = '';
-  document.getElementById('range-min').value = 1920;
-  document.getElementById('range-max').value = 2025;
+
+  // Bug 8: reset slider values AND trigger visual update
+  const slMin = document.getElementById('range-min');
+  const slMax = document.getElementById('range-max');
+  slMin.value = 1920;
+  slMax.value = 2025;
+  // Force thumb reposition on browsers that cache the value
+  slMin.dispatchEvent(new Event('input', { bubbles: false }));
+  slMax.dispatchEvent(new Event('input', { bubbles: false }));
   document.getElementById('range-label').textContent = '1920 — 2025';
-  document.getElementById('sort-select').value = 'default';
+
+  // Bug 5: force sort select visual state
+  const sortSel = document.getElementById('sort-select');
+  sortSel.value = 'default';
+  // Trigger change event so any browser-cached display state updates
+  sortSel.dispatchEvent(new Event('change', { bubbles: false }));
+
   document.querySelectorAll('.decade-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.hud-filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.hud-filter-btn').classList.add('active');
+
+  // Bug 9: rebuild super tabs so ALL is visually re-selected
   buildSuperTabs();
   buildCatNav();
   renderCanon();
@@ -639,7 +715,17 @@ function updateCmdSummary(container) {
 function scrollToCategory(ci) {
   updateNavActive(ci);
   showView('canon', document.querySelector('.view-btn'));
-  setTimeout(() => document.getElementById(`cat-${ci}`)?.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+
+  // Bug 6: expand the category first, THEN scroll — otherwise scrollIntoView
+  // fires before the category is visible, landing at the wrong offset.
+  if (collapsedCats.has(ci)) {
+    collapsedCats.delete(ci);
+    // Re-render to show the expanded category before scrolling
+    renderCanon();
+    setTimeout(() => document.getElementById(`cat-${ci}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  } else {
+    setTimeout(() => document.getElementById(`cat-${ci}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
 }
 
 function showView(view, btn) {
@@ -663,7 +749,11 @@ function toggleSidebar() {
 function openFilmModal(title, year, catIndex) {
   const key = getOmdbKey();
   const skipFlag = localStorage.getItem(LS_OMDB_SK);
-  if (!key && !skipFlag) { showOmdbPrompt(title, year, catIndex); return; }
+  // Bug 7: if skipped, go directly to modal (no-key view) — don't re-show prompt
+  if (!key && !skipFlag) {
+    showOmdbPrompt(title, year, catIndex);
+    return;
+  }
   _doOpenModal(title, year, catIndex);
 }
 
@@ -686,7 +776,15 @@ function saveOmdbKey() {
 
 function skipOmdbKey() {
   localStorage.setItem(LS_OMDB_SK, '1');
+  const inp = document.getElementById('omdb-key-input');
+  const pendingTitle = inp.dataset.title;
+  const pendingYear  = inp.dataset.year;
+  const pendingCi    = inp.dataset.ci;
   document.getElementById('omdb-prompt').classList.remove('open');
+  // Bug 7: if there was a pending film click, open it in limited (no-key) view
+  if (pendingTitle) {
+    _doOpenModal(pendingTitle, pendingYear ? parseInt(pendingYear) : null, parseInt(pendingCi) || 0);
+  }
 }
 
 async function _doOpenModal(title, year, catIndex) {
@@ -863,6 +961,7 @@ function renderStats() {
     ['CATEGORIES',     allCategories.length, `${catData.filter(c=>c.watched===c.total&&c.total>0).length} fully completed`]
   ].map(([label,val,sub]) =>
     `<div class="stat-readout">
+      <span class="bk-tl">┌</span><span class="bk-tr">┐</span><span class="bk-bl">└</span><span class="bk-br">┘</span>
       <div class="stat-readout-label">${label}</div>
       <div class="stat-readout-val">${val}</div>
       <div class="stat-readout-sub">${sub}</div>
@@ -891,6 +990,7 @@ function renderStats() {
     .sort((a,b) => a.watched/a.total - b.watched/b.total);
   document.getElementById('blind-spots').innerHTML = blindSpots.length
     ? blindSpots.map(c => `<div class="blind-item">
+        <span class="bk-tl">┌</span><span class="bk-br">┘</span>
         <div class="blind-warn">⚠ WARNING</div>
         <div class="blind-name">${c.name}</div>
         <div class="blind-stats">${c.watched}/${c.total} WATCHED · ${Math.round(c.watched/c.total*100)}%</div>
@@ -977,6 +1077,7 @@ function renderDirectors() {
       `<div class="cc-seg${i<Math.round(watched/total*Math.min(total,10))?' on':''}"></div>`
     ).join('');
     return `<div class="director-card" onclick="showDirectorDetail('${name.replace(/'/g,"\\'")}')" title="${name}">
+      <span class="bk-tl">┌</span><span class="bk-br">┘</span>
       <div class="director-name">${name}</div>
       <div class="director-count">${total} FILM${total!==1?'S':''} · ${watched} WATCHED</div>
       <div class="cat-comp-bar" style="margin-top:6px">${segs}</div>
@@ -1116,9 +1217,17 @@ function showSuggestions(picks, label='') {
 // KEYBOARD
 // ══════════════════════════════════════════════
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeModalDirect();
-    document.getElementById('omdb-prompt').classList.remove('open');
+  if (e.key === 'Escape' || e.keyCode === 27) {
+    // Blur any focused element first (fixes cross-browser edge cases)
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+    const omdbPrompt = document.getElementById('omdb-prompt');
+    if (omdbPrompt.classList.contains('open')) {
+      omdbPrompt.classList.remove('open');
+    } else {
+      closeModalDirect();
+    }
   }
   if ((e.key === 'f' || e.key === '/') && document.activeElement !== document.getElementById('search-input') && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
