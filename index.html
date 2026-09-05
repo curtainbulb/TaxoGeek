@@ -59,46 +59,19 @@
      MAIN HUD — hidden until boot completes
      ════════════════════════════════════════════ -->
 <div id="screen">
-<div id="app" style="display:none">
 
-  <!-- ── SIDEBAR — SYSTEM STATUS COLUMN ── -->
+  <!-- ── CHANNEL SELECT — overlay drawer, NOT a persistent rail.
+       Closed by default. Opened via the topbar CHANNELS switch,
+       closed by the backdrop, its own [×], or picking a category. ── -->
   <nav id="sidebar">
-
-    <!-- System ID -->
-    <div class="sys-header">
-      <div class="sys-header-banner">
-        <span>TAXOGEEK SYS</span>
-        <span class="blink">● ONLINE</span>
-      </div>
-      <div class="sys-id-block">
-        <div class="sys-logo">TAXOGEEK</div>
-        <div class="sys-logo-sub">// THE PERSONAL CANON</div>
-        <div class="sys-build">BUILD 2024.12 · curtainbulb · v4.1</div>
-      </div>
-    </div>
-
-    <!-- Progress telemetry -->
-    <div class="status-module">
-      <div class="module-label">◈ PROGRESS TELEMETRY</div>
-      <div id="global-stats">
-        <div class="status-body">
-          <div class="readout-row">
-            <span class="readout-label">WATCHED</span>
-            <span class="readout-val">—</span>
-          </div>
-          <div class="readout-row">
-            <span class="readout-label">TOTAL</span>
-            <span class="readout-val">—</span>
-          </div>
-          <div class="seg-bar"></div>
-          <div class="seg-pct">—% COMPLETE</div>
-        </div>
-      </div>
+    <div class="drawer-head">
+      <span>◈ CHANNEL SELECT</span>
+      <button class="drawer-close" onclick="toggleSidebar()">[×]</button>
     </div>
 
     <!-- Search -->
     <div class="input-module status-module">
-      <div class="module-label yellow">◈ QUERY / SEARCH</div>
+      <div class="module-label">◈ QUERY / SEARCH</div>
       <div class="hud-input-wrap">
         <input class="hud-input" id="search-input" type="text"
                placeholder="search titles, categories..."
@@ -118,24 +91,20 @@
 
     <!-- Category nav -->
     <div class="cat-nav" id="cat-nav"></div>
-
   </nav>
+  <div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
-  <!-- ── MAIN CONTENT AREA ── -->
-  <div id="main">
+  <!-- ── CONSOLE BODY ── -->
+  <div id="app" style="display:none">
 
-    <!-- Topbar -->
+    <!-- Slim identification strip — not a nav column, just a brand/status line -->
     <div id="topbar">
-      <div class="topbar-banner">◈ MODE</div>
-
-      <button class="view-btn active" onclick="showView('canon',this)">CANON</button>
-      <button class="view-btn"        onclick="showView('stats',this)">STATS</button>
-      <button class="view-btn"        onclick="showView('dupes',this)">DUPES</button>
-      <button class="view-btn"        onclick="showView('directors',this)">DIRECTORS</button>
-      <button class="view-btn"        onclick="showView('next',this)">WATCH NEXT</button>
-
+      <div class="topbar-brand">
+        <span class="brand-mark">TAXOGEEK</span>
+        <span class="brand-online blink">● ONLINE</span>
+      </div>
+      <button id="sidebar-toggle" onclick="toggleSidebar()">☰ CHANNELS</button>
       <div class="topbar-spacer"></div>
-
       <span class="topbar-stat" id="topbar-stat"></span>
       <div class="topbar-clock" id="topbar-clock">00:00:00</div>
       <button class="topbar-action" onclick="toggleCmdBar()">[ FILTER ]</button>
@@ -143,7 +112,36 @@
       <button class="topbar-action" onclick="collapseAll()">[ − ]</button>
     </div>
 
-    <!-- Filter / cmd bar -->
+    <!-- ── HERO INSTRUMENT — one dominant dial, first thing the eye hits ── -->
+    <div id="hero" class="bc bc-cyan">
+      <div class="hero-label">◈ PROGRESS TELEMETRY — CANON COMPLETION</div>
+      <div id="global-stats">
+        <div class="status-body">
+          <div class="readout-row">
+            <span class="readout-label">WATCHED</span>
+            <span class="readout-val">—</span>
+          </div>
+          <div class="readout-row">
+            <span class="readout-label">TOTAL</span>
+            <span class="readout-val">—</span>
+          </div>
+          <div class="seg-bar"></div>
+          <div class="seg-pct">—% COMPLETE</div>
+        </div>
+      </div>
+      <div class="sys-build">BUILD 2024.12 · curtainbulb · v5</div>
+    </div>
+
+    <!-- ── MODE STRIP — physical toggle switches, not browser tabs ── -->
+    <div id="mode-strip">
+      <button class="view-btn active" onclick="showView('canon',this)"><i></i>CANON</button>
+      <button class="view-btn"        onclick="showView('stats',this)"><i></i>STATS</button>
+      <button class="view-btn"        onclick="showView('dupes',this)"><i></i>DUPES</button>
+      <button class="view-btn"        onclick="showView('directors',this)"><i></i>DIRECTORS</button>
+      <button class="view-btn"        onclick="showView('next',this)"><i></i>WATCH NEXT</button>
+    </div>
+
+    <!-- Filter / cmd tray -->
     <div id="cmd-bar">
       <div class="cmd-row">
         <span class="cmd-label">DECADE</span>
@@ -170,105 +168,105 @@
     </div>
 
     <!-- ── PANELS ── -->
+    <div id="main">
 
-    <!-- CANON -->
-    <div class="panel active" id="view-canon">
-      <div id="canon-content"></div>
-    </div>
+      <!-- CANON -->
+      <div class="panel active" id="view-canon">
+        <div id="canon-content" class="canon-grid"></div>
+      </div>
 
-    <!-- STATS -->
-    <div class="panel" id="view-stats">
+      <!-- STATS -->
+      <div class="panel" id="view-stats">
 
-      <div class="hud-section">
-        <div class="hud-section-head">
-          <span class="hud-section-label">◈ SYSTEM METRICS</span>
-          <div class="hud-section-line"></div>
+        <div class="hud-section">
+          <div class="hud-section-head">
+            <span class="hud-section-label">◈ SYSTEM METRICS</span>
+            <div class="hud-section-line"></div>
+          </div>
+          <div class="stats-readout-grid" id="stats-cards"></div>
         </div>
-        <div class="stats-readout-grid" id="stats-cards"></div>
-      </div>
 
-      <div class="hud-section">
-        <div class="hud-section-head">
-          <span class="hud-section-label">◈ DECADE COVERAGE MATRIX</span>
-          <div class="hud-section-line"></div>
+        <div class="hud-section">
+          <div class="hud-section-head">
+            <span class="hud-section-label">◈ DECADE COVERAGE MATRIX</span>
+            <div class="hud-section-line"></div>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#080d12"></span>ZERO</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#0a2018"></span>LOW</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--grn-dim)"></span>MED</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>HIGH</span>
+          </div>
+          <div id="heatmap"></div>
         </div>
-        <div class="legend">
-          <span class="legend-item"><span class="legend-dot" style="background:#080d12"></span>ZERO</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#0a2018"></span>LOW</span>
-          <span class="legend-item"><span class="legend-dot" style="background:var(--grn-dim)"></span>MED</span>
-          <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>HIGH</span>
+
+        <div class="hud-section">
+          <div class="hud-section-head">
+            <span class="hud-section-label red-label">⚠ BLIND SPOTS — TAXONOMIC GAPS</span>
+            <div class="hud-section-line"></div>
+          </div>
+          <div id="blind-spots"></div>
         </div>
-        <div id="heatmap"></div>
-      </div>
 
-      <div class="hud-section">
-        <div class="hud-section-head">
-          <span class="hud-section-label red-label">⚠ BLIND SPOTS — TAXONOMIC GAPS</span>
-          <div class="hud-section-line"></div>
+        <div class="hud-section">
+          <div class="hud-section-head">
+            <span class="hud-section-label">◈ CATEGORY COMPLETION</span>
+            <div class="hud-section-line"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="suggest-btn" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
+          </div>
+          <div class="cat-comp-list" id="cat-completion"></div>
         </div>
-        <div id="blind-spots"></div>
+
       </div>
 
-      <div class="hud-section">
-        <div class="hud-section-head">
-          <span class="hud-section-label">◈ CATEGORY COMPLETION</span>
-          <div class="hud-section-line"></div>
+      <!-- DUPES -->
+      <div class="panel" id="view-dupes">
+        <div class="panel-intro">
+          Films indexed across multiple categories — cross-listed entries reflect the taxonomy's intentional overlaps.
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-          <button class="suggest-btn" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
+        <div id="dupes-content"></div>
+      </div>
+
+      <!-- DIRECTORS -->
+      <div class="panel" id="view-directors">
+        <div class="panel-intro">
+          Directors with 2+ films in the canon. Extracted from taxonomy structure + OMDb data (open a film first to enrich).
         </div>
-        <div class="cat-comp-list" id="cat-completion"></div>
+        <div class="director-grid" id="director-grid"></div>
+        <div id="director-detail"></div>
       </div>
 
-    </div>
+      <!-- WATCH NEXT -->
+      <div class="panel" id="view-next">
+        <div class="panel-intro">
+          Select a session length, then pick a transmission mode.
+        </div>
+        <div class="time-row">
+          <span class="time-label">SESSION:</span>
+          <button class="time-btn active" onclick="setTime(0,this)">ANY</button>
+          <button class="time-btn" onclick="setTime(60,this)">60 MIN</button>
+          <button class="time-btn" onclick="setTime(90,this)">90 MIN</button>
+          <button class="time-btn" onclick="setTime(120,this)">2 HR</button>
+          <button class="time-btn" onclick="setTime(150,this)">2.5 HR</button>
+          <button class="time-btn" onclick="setTime(180,this)">3 HR+</button>
+        </div>
+        <div class="suggest-controls">
+          <button class="suggest-btn" onclick="suggestRandom()">[ SURPRISE ME ]</button>
+          <button class="suggest-btn" onclick="suggestByGap()">[ FILL BLIND SPOT ]</button>
+          <button class="suggest-btn" onclick="suggestArthouse()">[ ARTHOUSE MODE ]</button>
+          <button class="suggest-btn" onclick="suggestRecent()">[ MOST RECENT ]</button>
+          <button class="suggest-btn" onclick="suggestOldest()">[ DEEP ARCHIVE ]</button>
+        </div>
+        <div id="suggestions"></div>
+      </div>
 
-    <!-- DUPES -->
-    <div class="panel" id="view-dupes">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:20px;letter-spacing:0.06em;line-height:1.8">
-        Films indexed across multiple categories — cross-listed entries reflect the taxonomy's intentional overlaps.
-      </div>
-      <div id="dupes-content"></div>
-    </div>
-
-    <!-- DIRECTORS -->
-    <div class="panel" id="view-directors">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:20px;letter-spacing:0.06em;line-height:1.8">
-        Directors with 2+ films in the canon. Extracted from taxonomy structure + OMDb data (open a film first to enrich).
-      </div>
-      <div class="director-grid" id="director-grid"></div>
-      <div id="director-detail"></div>
-    </div>
-
-    <!-- WATCH NEXT -->
-    <div class="panel" id="view-next">
-      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--txt-mid);margin-bottom:18px">
-        Select a session length, then pick a transmission mode.
-      </div>
-      <div class="time-row">
-        <span class="time-label">SESSION:</span>
-        <button class="time-btn active" onclick="setTime(0,this)">ANY</button>
-        <button class="time-btn" onclick="setTime(60,this)">60 MIN</button>
-        <button class="time-btn" onclick="setTime(90,this)">90 MIN</button>
-        <button class="time-btn" onclick="setTime(120,this)">2 HR</button>
-        <button class="time-btn" onclick="setTime(150,this)">2.5 HR</button>
-        <button class="time-btn" onclick="setTime(180,this)">3 HR+</button>
-      </div>
-      <div class="suggest-controls">
-        <button class="suggest-btn" onclick="suggestRandom()">[ SURPRISE ME ]</button>
-        <button class="suggest-btn" onclick="suggestByGap()">[ FILL BLIND SPOT ]</button>
-        <button class="suggest-btn" onclick="suggestArthouse()">[ ARTHOUSE MODE ]</button>
-        <button class="suggest-btn" onclick="suggestRecent()">[ MOST RECENT ]</button>
-        <button class="suggest-btn" onclick="suggestOldest()">[ DEEP ARCHIVE ]</button>
-      </div>
-      <div id="suggestions"></div>
-    </div>
-
-  </div><!-- /#main -->
-</div><!-- /#app -->
+    </div><!-- /#main -->
+  </div><!-- /#app -->
 </div><!-- /#screen -->
 
 <button id="jump-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
-<button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
 
 <script src="main.js"></script>
 </body>

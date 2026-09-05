@@ -440,7 +440,12 @@ function renderCanon() {
     const pctInt = Math.round(pct * 100);
     const gaugeClass = isDanger ? ' danger' : (isComplete ? ' complete' : '');
 
-    html += `<div class="category-block${isDanger ? ' danger' : ''}" id="cat-${ci}">
+    // Size class — panels scale with how much they actually hold, so a
+    // 40-film category reads as a bigger physical unit than a 4-film one,
+    // instead of every category rendering as an identical card.
+    const sizeClass = total >= 18 ? ' panel-xl' : total >= 9 ? ' panel-lg' : total >= 4 ? ' panel-md' : ' panel-sm';
+
+    html += `<div class="category-block${isDanger ? ' danger' : ''}${sizeClass}" id="cat-${ci}">
       <span class="bk-tl">┌</span><span class="bk-tr">┐</span><span class="bk-bl">└</span><span class="bk-br">┘</span>
       <div class="cat-header" onclick="toggleCategory(${ci})">
         <div class="cat-header-left">
@@ -730,6 +735,7 @@ function updateCmdSummary(container) {
 function scrollToCategory(ci) {
   updateNavActive(ci);
   showView('canon', document.querySelector('.view-btn'));
+  document.getElementById('sidebar')?.classList.remove('open');
 
   // Bug 6: expand the category first, THEN scroll — otherwise scrollIntoView
   // fires before the category is visible, landing at the wrong offset.
