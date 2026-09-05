@@ -437,6 +437,9 @@ function renderCanon() {
       filmsHtml = renderFilmGrid(films, siteWatched, searchLower, ci);
     }
 
+    const pctInt = Math.round(pct * 100);
+    const gaugeClass = isDanger ? ' danger' : (isComplete ? ' complete' : '');
+
     html += `<div class="category-block${isDanger ? ' danger' : ''}" id="cat-${ci}">
       <span class="bk-tl">┌</span><span class="bk-tr">┐</span><span class="bk-bl">└</span><span class="bk-br">┘</span>
       <div class="cat-header" onclick="toggleCategory(${ci})">
@@ -447,8 +450,11 @@ function renderCanon() {
         </div>
         <div class="cat-header-right">
           ${dangerBadge}
-          <div class="cat-readout${isComplete?' complete':''}">${watchedCount}<span style="font-size:14px;color:var(--txt-lo)">/${total}</span></div>
-          <div class="cat-mini-bar">${segsHtml}</div>
+          <div class="cat-readout-stack">
+            <div class="cat-readout${isComplete?' complete':''}">${watchedCount}<span>/${total}</span></div>
+            <div class="cat-mini-bar">${segsHtml}</div>
+          </div>
+          <div class="gauge gauge-sm${gaugeClass}" style="--pct:${pctInt}"><div class="gauge-val">${pctInt}</div></div>
         </div>
         <div class="cat-toggle">${isCollapsed ? '[+]' : '[-]'}</div>
       </div>
@@ -592,23 +598,32 @@ function updateGlobalStats() {
     if (f.watched || siteWatched.has(normalizeTitle(f.title))) watched++;
   }));
   const pct = total > 0 ? watched / total : 0;
+  const pctInt = Math.round(pct * 100);
   const filledSegs = Math.round(pct * 10);
   const segs = Array.from({length:10}, (_,i) =>
     `<div class="seg${i < filledSegs ? ' on' : ''}"></div>`
   ).join('');
+  const gaugeClass = pctInt === 100 && total > 0 ? ' complete' : '';
 
+  // Dominant element: a real circular gauge, not a rectangle.
+  // Everything else (watched/total counts, tick bar) sits smaller beside it.
   document.getElementById('global-stats').innerHTML = `
     <div class="status-body">
-      <div class="readout-row">
-        <span class="readout-label">WATCHED</span>
-        <span class="readout-val">${watched}</span>
+      <div class="gauge${gaugeClass}" style="--pct:${pctInt}">
+        <div class="gauge-val">${pctInt}%</div>
       </div>
-      <div class="readout-row">
-        <span class="readout-label">TOTAL</span>
-        <span class="readout-val">${total}</span>
+      <div class="telem-side">
+        <div class="readout-row">
+          <span class="readout-label">WATCHED</span>
+          <span class="readout-val">${watched}</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout-label">TOTAL</span>
+          <span class="readout-val">${total}</span>
+        </div>
+        <div class="seg-bar">${segs}</div>
+        <div class="seg-pct">${pctInt}% COMPLETE</div>
       </div>
-      <div class="seg-bar">${segs}</div>
-      <div class="seg-pct">${Math.round(pct*100)}% COMPLETE</div>
     </div>
   `;
 
