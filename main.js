@@ -138,14 +138,14 @@ function startClock() {
 async function runBoot(moviesText) {
   const container = document.getElementById('boot-lines');
   const lines = [
-    { text: 'TAXOGEEK TERMINAL v4.1.0', cls: 'head' },
-    { text: 'Copyright (C) 1987-2024 CurtainBulb Systems', cls: '' },
+    { text: 'TAXOGEEK · PRIVATE SCREENING ROOM', cls: 'head' },
+    { text: 'A living list for films worth returning to.', cls: '' },
     { text: '', cls: '' },
-    { text: '[ BIOS ] Initializing display adapter...', cls: '' },
-    { text: '[ BIOS ] Memory check: 640K OK', cls: 'ok' },
-    { text: '[ BOOT ] Loading kernel modules...', cls: '' },
-    { text: '[ BOOT ] cinema.db mounted read/write', cls: 'ok' },
-    { text: '[ BOOT ] Parsing taxonomy index...', cls: '' },
+    { text: '[ ROOM ] Warming the projector...', cls: '' },
+    { text: '[ ROOM ] Lamp check: warm and steady', cls: 'ok' },
+    { text: '[ ARCHIVE ] Opening the shelves...', cls: '' },
+    { text: '[ ARCHIVE ] Personal canon ready to annotate', cls: 'ok' },
+    { text: '[ INDEX ] Finding the edges between genres...', cls: '' },
   ];
 
   for (let i = 0; i < lines.length; i++) {
@@ -161,12 +161,12 @@ async function runBoot(moviesText) {
   const catCount   = allCategories.length;
 
   const lines2 = [
-    { text: `[ DATA ] ${catCount} categories loaded`, cls: 'ok' },
-    { text: `[ DATA ] ${totalFilms} film records indexed`, cls: 'ok' },
-    { text: '[ SYS  ] Building navigation structures...', cls: '' },
-    { text: '[ SYS  ] OMDb interface ready', cls: 'ok' },
+    { text: `[ SHELVES ] ${catCount} rooms opened`, cls: 'ok' },
+    { text: `[ REELS ] ${totalFilms} films in the ledger`, cls: 'ok' },
+    { text: '[ INDEX ] Building the wayfinding...', cls: '' },
+    { text: '[ NOTES ] Film details available on request', cls: 'ok' },
     { text: '', cls: '' },
-    { text: 'SYSTEM READY.', cls: 'head' },
+    { text: 'LIGHTS DOWN. LET’S FIND SOMETHING.', cls: 'head' },
   ];
   for (const l of lines2) {
     await delay(50 + Math.random() * 60);
