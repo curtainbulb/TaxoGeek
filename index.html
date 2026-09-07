@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#282250">
-<title>TAXOGEEK / THE PERSONAL CANON</title>
+<meta name="theme-color" content="#0d1715">
+<meta name="description" content="A living film field for films worth returning to.">
+<title>TAXOGEEK / THE FILM FIELD</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
 <div id="loader">
   <div id="boot-logo">
     <div class="logo-name">TAXOGEEK</div>
-    <div class="logo-sub">// A LIVING INDEX OF FILMS WORTH THE TIME</div>
+    <div class="logo-sub">// A LIVING FILM FIELD FOR FILMS WORTH RETURNING TO</div>
   </div>
   <div id="boot-lines"></div>
   <div class="boot-prompt">
@@ -66,7 +67,7 @@
        closed by the backdrop, its own [×], or picking a category. ── -->
   <nav id="sidebar">
     <div class="drawer-head">
-      <span>THE INDEX</span>
+      <span>FIELD GUIDE</span>
       <button class="drawer-close" onclick="toggleSidebar()">[×]</button>
     </div>
 
@@ -75,7 +76,7 @@
       <div class="module-label">FIND A FILM</div>
       <div class="hud-input-wrap">
         <input class="hud-input" id="search-input" type="text"
-               placeholder="search titles, categories..."
+               placeholder="find a title, room, or thread..."
                oninput="handleSearch(this.value)">
       </div>
     </div>
@@ -102,20 +103,20 @@
     <div id="topbar">
       <div class="topbar-brand">
         <span class="brand-mark">TAXOGEEK</span>
-        <span class="brand-online">PRIVATE COLLECTION</span>
+        <span class="brand-online">PRIVATE FILM FIELD</span>
       </div>
       <button id="sidebar-toggle" onclick="toggleSidebar()">☰ CHANNELS</button>
       <div class="topbar-spacer"></div>
       <span class="topbar-stat" id="topbar-stat"></span>
       <div class="topbar-clock" id="topbar-clock">00:00:00</div>
-      <button class="topbar-action" onclick="toggleCmdBar()">FILTERS</button>
-      <button class="topbar-action" onclick="expandAll()">EXPAND</button>
-      <button class="topbar-action" onclick="collapseAll()">COLLAPSE</button>
+      <button class="topbar-action" onclick="toggleCmdBar()">REFINE</button>
+      <button class="topbar-action" onclick="expandAll()">OPEN ALL</button>
+      <button class="topbar-action" onclick="collapseAll()">FOLD ALL</button>
     </div>
 
     <!-- ── HERO INSTRUMENT — one dominant dial, first thing the eye hits ── -->
     <div id="hero" class="bc bc-cyan">
-      <div class="hero-label">THE CANON / YOUR LONG VIEW</div>
+      <div class="hero-label">THE FILM FIELD / YOUR LONG VIEW</div>
       <div id="global-stats">
         <div class="status-body">
           <div class="readout-row">
@@ -130,7 +131,7 @@
           <div class="seg-pct">—% COMPLETE</div>
         </div>
       </div>
-      <div class="sys-build">EDITION 01 / KEEP WATCHING</div>
+      <div class="sys-build">FIELD NOTE 01 / KEEP WATCHING</div>
     </div>
 
     <!-- ── MODE STRIP — physical toggle switches, not browser tabs ── -->
@@ -181,7 +182,7 @@
 
         <div class="hud-section">
           <div class="hud-section-head">
-            <span class="hud-section-label">◈ SYSTEM METRICS</span>
+          <span class="hud-section-label">◈ FIELD METRICS</span>
             <div class="hud-section-line"></div>
           </div>
           <div class="stats-readout-grid" id="stats-cards"></div>
@@ -225,7 +226,7 @@
       <!-- DUPES -->
       <div class="panel" id="view-dupes">
         <div class="panel-intro">
-          Films that belong to more than one room — the interesting overlaps in your collection.
+          Films that belong to more than one room — the productive overlaps in your collection.
         </div>
         <div id="dupes-content"></div>
       </div>
@@ -233,7 +234,7 @@
       <!-- DIRECTORS -->
       <div class="panel" id="view-directors">
         <div class="panel-intro">
-          Directors with two or more films in the canon. Open a film to enrich the index with credits.
+          Directors with two or more films in the field. Open a film to enrich the map with credits.
         </div>
         <div class="director-grid" id="director-grid"></div>
         <div id="director-detail"></div>
@@ -242,7 +243,7 @@
       <!-- WATCH NEXT -->
       <div class="panel" id="view-next">
         <div class="panel-intro">
-          Pick a runtime, then let the index choose tonight's direction.
+          Pick a runtime, then let the field choose tonight's direction.
         </div>
         <div class="time-row">
           <span class="time-label">SESSION:</span>
