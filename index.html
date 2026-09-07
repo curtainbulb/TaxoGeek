@@ -42,8 +42,8 @@
     </div>
     <input class="omdb-input" id="omdb-key-input" type="text" placeholder="paste key here...">
     <div class="omdb-btns">
-      <button class="omdb-btn primary" onclick="saveOmdbKey()">[ SAVE KEY ]</button>
-      <button class="omdb-btn" onclick="skipOmdbKey()">[ SKIP ]</button>
+      <button class="omdb-btn primary" onclick="saveOmdbKey()">Save key</button>
+      <button class="omdb-btn" onclick="skipOmdbKey()">Skip for now</button>
     </div>
   </div>
 </div>
@@ -68,7 +68,7 @@
   <nav id="sidebar">
     <div class="drawer-head">
       <span>FIELD GUIDE</span>
-      <button class="drawer-close" onclick="toggleSidebar()">[×]</button>
+      <button class="drawer-close" aria-label="Close field guide" onclick="toggleSidebar()">×</button>
     </div>
 
     <!-- Search -->
@@ -105,7 +105,7 @@
         <span class="brand-mark">TAXOGEEK</span>
         <span class="brand-online">PRIVATE FILM FIELD</span>
       </div>
-      <button id="sidebar-toggle" onclick="toggleSidebar()">☰ CHANNELS</button>
+      <button id="sidebar-toggle" onclick="toggleSidebar()">☰ FIELD GUIDE</button>
       <div class="topbar-spacer"></div>
       <span class="topbar-stat" id="topbar-stat"></span>
       <div class="topbar-clock" id="topbar-clock">00:00:00</div>
@@ -216,7 +216,7 @@
             <div class="hud-section-line"></div>
           </div>
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <button class="suggest-btn" onclick="exportWatched()">[ EXPORT WATCHED LIST ]</button>
+            <button class="suggest-btn" onclick="exportWatched()">Export watched list</button>
           </div>
           <div class="cat-comp-list" id="cat-completion"></div>
         </div>
@@ -255,11 +255,11 @@
           <button class="time-btn" onclick="setTime(180,this)">3 HR+</button>
         </div>
         <div class="suggest-controls">
-          <button class="suggest-btn" onclick="suggestRandom()">[ SURPRISE ME ]</button>
-          <button class="suggest-btn" onclick="suggestByGap()">[ FILL BLIND SPOT ]</button>
-          <button class="suggest-btn" onclick="suggestArthouse()">[ ARTHOUSE MODE ]</button>
-          <button class="suggest-btn" onclick="suggestRecent()">[ MOST RECENT ]</button>
-          <button class="suggest-btn" onclick="suggestOldest()">[ DEEP ARCHIVE ]</button>
+          <button class="suggest-btn" onclick="suggestRandom()">Surprise me</button>
+          <button class="suggest-btn" onclick="suggestByGap()">Fill a blind spot</button>
+          <button class="suggest-btn" onclick="suggestArthouse()">Arthouse mode</button>
+          <button class="suggest-btn" onclick="suggestRecent()">Most recent</button>
+          <button class="suggest-btn" onclick="suggestOldest()">Deep archive</button>
         </div>
         <div id="suggestions"></div>
       </div>
@@ -268,7 +268,7 @@
   </div><!-- /#app -->
 </div><!-- /#screen -->
 
-<button id="jump-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
+<button id="jump-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">Back to top</button>
 
 <script src="main.js"></script>
 </body>

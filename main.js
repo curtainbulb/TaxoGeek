@@ -26,6 +26,15 @@ const LS_OMDB    = 'taxogeek_omdb_key';
 const LS_OMDB_SK = 'taxogeek_omdb_skip';
 const omdbCache  = new Map();
 
+// The markdown file is intentionally treated as the source of truth for the
+// user's wording. These aliases only affect metadata lookup, never display,
+// watch-state keys, exports, or the contents of movies.md.
+const TITLE_CORRECTIONS = new Map([
+  ['olympia part 1 fest der volker', ['Olympia Part One: Festival of the Nations']],
+  ['olympia part 2 fest der schonheit', ['Olympia Part Two: Festival of Beauty']],
+  ['red riding in the year of our lord 1974', ['Red Riding: The Year of Our Lord 1974']],
+]);
+
 const KNOWN_DIRECTORS = [
   'Bergman','Tarkovsky','Antonioni','Godard','Truffaut','Varda','Rohmer',
   'Kieslowski','Haneke','Hitchcock','Lynch','Kubrick','Scorsese','Coppola',
@@ -765,6 +774,136 @@ function toggleSidebar() {
 }
 
 // ══════════════════════════════════════════════
+// TITLE RESOLUTION
+// ══════════════════════════════════════════════
+function normalizeLookupKey(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[–—−]/g, '-')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function uniqueStrings(values) {
+  const seen = new Set();
+  return values.filter(value => {
+    const clean = String(value || '').replace(/\s+/g, ' ').trim();
+    const key = normalizeLookupKey(clean);
+    if (!clean || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getFilmRecord(title, catIndex) {
+  const inCategory = allCategories[catIndex]?.films || [];
+  return inCategory.find(f => normalizeTitle(f.title) === normalizeTitle(title))
+    || allCategories.flatMap(c => c.films).find(f => normalizeTitle(f.title) === normalizeTitle(title));
+}
+
+function getTitleCandidates(title, year, catIndex) {
+  const record = getFilmRecord(title, catIndex);
+  const rawTitle = record?.fullTitle || title;
+  const parts = rawTitle.split(/\s*\/\s*/).map(part => part.trim());
+  const normalizedTitle = normalizeLookupKey(title);
+  const corrected = TITLE_CORRECTIONS.get(normalizedTitle) || [];
+  const variants = [
+    ...corrected,
+    title,
+    ...parts,
+    title.replace(/[–—−]/g, '-'),
+    title.replace(/\bPart\s+([12])\b/i, (_, n) => n === '1' ? 'Part One' : 'Part Two'),
+    title.replace(/\bPart\s+(One|Two)\b/i, (_, word) => word.toLowerCase() === 'one' ? 'Part 1' : 'Part 2'),
+    title.replace(/\bVol\.\s*(\d+)\b/i, 'Volume $1'),
+    title.replace(/\s+[–—−-]\s+(Part|Episode|Chapter)\b/gi, ': $1'),
+  ];
+
+  // Some list entries use a festival/archive subtitle that has no literal
+  // equivalent in the public database. Keep the correction local to lookup.
+  if (normalizedTitle === 'olympia part 1 fest der volker') {
+    variants.push('Olympia Part One: Festival of the Nations');
+  }
+  if (normalizedTitle === 'olympia part 2 fest der schonheit') {
+    variants.push('Olympia Part Two: Festival of Beauty');
+  }
+  if (normalizedTitle === 'red riding in the year of our lord 1974') {
+    variants.push('Red Riding: The Year of Our Lord 1974');
+  }
+
+  return uniqueStrings(variants).slice(0, 8);
+}
+
+function getResultYear(value) {
+  const match = String(value || '').match(/\d{4}/);
+  return match ? parseInt(match[0], 10) : null;
+}
+
+function yearMatches(resultYear, requestedYear) {
+  if (!requestedYear || !resultYear) return true;
+  return Math.abs(resultYear - requestedYear) <= 1;
+}
+
+function titleSimilarity(left, right) {
+  const a = normalizeLookupKey(left);
+  const b = normalizeLookupKey(right);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return .85;
+  const aWords = new Set(a.split(' '));
+  const bWords = new Set(b.split(' '));
+  const overlap = [...aWords].filter(word => bWords.has(word)).length;
+  return overlap / Math.max(aWords.size, bWords.size);
+}
+
+async function fetchOmdb(params, key) {
+  const query = new URLSearchParams({ apikey: key, plot: 'short', ...params });
+  const response = await fetch(`https://www.omdbapi.com/?${query.toString()}`);
+  if (!response.ok) throw new Error(`OMDb HTTP ${response.status}`);
+  return response.json();
+}
+
+async function resolveOmdbRecord(title, year, key, catIndex) {
+  const candidates = getTitleCandidates(title, year, catIndex);
+  let lastResponse = null;
+
+  // Fast path: exact title lookups for corrected/canonical candidates.
+  for (const candidate of candidates) {
+    const data = await fetchOmdb({ t: candidate, ...(year ? { y: year } : {}) }, key);
+    lastResponse = data;
+    if (data.Response === 'True' && yearMatches(getResultYear(data.Year), year)) {
+      data._taxogeekQuery = candidate;
+      return data;
+    }
+  }
+
+  // Fallback: OMDb's search endpoint returns IDs; fetch the winning ID for
+  // complete metadata. Ranking by year avoids Olympia-like false positives.
+  const matches = [];
+  for (const candidate of candidates) {
+    const data = await fetchOmdb({ s: candidate, ...(year ? { y: year } : {}) }, key);
+    lastResponse = data;
+    if (data.Response !== 'True' || !Array.isArray(data.Search)) continue;
+    data.Search.forEach(result => {
+      const requestedYear = year || getResultYear(result.Year);
+      const yearScore = yearMatches(getResultYear(result.Year), requestedYear) ? .45 : 0;
+      const score = titleSimilarity(candidate, result.Title) + yearScore;
+      matches.push({ result, score, candidate });
+    });
+  }
+
+  matches.sort((a, b) => b.score - a.score);
+  const winner = matches[0];
+  if (!winner?.result?.imdbID) return lastResponse || { Response: 'False', Error: 'Movie not found!' };
+
+  const data = await fetchOmdb({ i: winner.result.imdbID }, key);
+  data._taxogeekQuery = winner.candidate;
+  return data;
+}
+
+// ══════════════════════════════════════════════
 // OMDb MODAL
 // ══════════════════════════════════════════════
 function openFilmModal(title, year, catIndex) {
@@ -825,9 +964,7 @@ async function _doOpenModal(title, year, catIndex) {
   content.innerHTML = `<div class="modal-fetching">FETCHING RECORD<span class="blink">_</span></div>`;
 
   try {
-    const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}${year?'&y='+year:''}&apikey=${key}&plot=short`;
-    const res  = await fetch(url);
-    const data = await res.json();
+    const data = await resolveOmdbRecord(title, year, key, catIndex);
     if (data.Response === 'True') {
       omdbCache.set(cacheKey, data);
       if (data.Director && catIndex >= 0) enrichDirectorFromOmdb(title, year, catIndex, data.Director);
@@ -859,13 +996,15 @@ function renderModalData(data, title, year, catIndex) {
     <div class="modal-titlebar">
       <span class="modal-titlebar-id">[ RECORD #${catIndex}·OMDb ]</span>
       <span class="modal-titlebar-title">${data.Title || title}</span>
-      <button class="modal-close" onclick="closeModalDirect()">[×]</button>
+      <button class="modal-close" aria-label="Close film details" onclick="closeModalDirect()">×</button>
     </div>
     <div class="modal-body">
       <div class="modal-poster">${posterHtml}</div>
       <div class="modal-meta">
         <div class="modal-title">${data.Title || title}</div>
         <div class="modal-attrs">${[data.Year,data.Rated,data.Runtime].filter(v=>v&&v!=='N/A').join(' · ')}</div>
+        ${data._taxogeekQuery && normalizeLookupKey(data._taxogeekQuery) !== normalizeLookupKey(title)
+          ? `<div class="lookup-note">Matched in the film database as “${data._taxogeekQuery}”</div>` : ''}
         <div class="modal-chips">
           ${genres.map(g=>`<span class="chip">${g}</span>`).join('')}
         </div>
@@ -890,8 +1029,8 @@ function renderModalData(data, title, year, catIndex) {
             ${fw ? '█ WATCHED' : '· UNWATCHED'}
           </span>
           ${!allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched
-            ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw ? '[ UNMARK ]' : '[ MARK WATCHED ]'}</button>`
-            : '<span style="font-size:9px;color:var(--txt-lo)">[from .md]</span>'}
+            ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw ? 'Unmark watched' : 'Mark watched'}</button>`
+            : '<span class="source-note">From your film list</span>'}
         </div>
       </div>
     </div>`;
@@ -902,7 +1041,7 @@ function renderModalNoKey(title, year, catIndex) {
     <div class="modal-titlebar">
       <span class="modal-titlebar-id">[ NO API KEY ]</span>
       <span class="modal-titlebar-title">${title}${year?` (${year})`:''}</span>
-      <button class="modal-close" onclick="closeModalDirect()">[×]</button>
+      <button class="modal-close" aria-label="Close film details" onclick="closeModalDirect()">×</button>
     </div>
     <div class="modal-meta" style="padding:24px">
       <div class="modal-title">${title}</div>
@@ -911,7 +1050,7 @@ function renderModalNoKey(title, year, catIndex) {
         No OMDb key configured. Film metadata requires an API key.<br>
         Free key at <strong style="color:var(--txt-hi)">omdbapi.com</strong> (1000 req/day).
       </div>
-      <button class="modal-watch-btn" style="margin-top:16px" onclick="closeModalDirect();showOmdbPrompt('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">[ ENTER API KEY ]</button>
+      <button class="modal-watch-btn" style="margin-top:16px" onclick="closeModalDirect();showOmdbPrompt('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">Enter API key</button>
     </div>`;
 }
 
@@ -924,7 +1063,7 @@ function renderModalNoData(title, year, catIndex, err) {
     <div class="modal-titlebar">
       <span class="modal-titlebar-id">[ NO DATA ]</span>
       <span class="modal-titlebar-title">${title}${year?` (${year})`:''}</span>
-      <button class="modal-close" onclick="closeModalDirect()">[×]</button>
+      <button class="modal-close" aria-label="Close film details" onclick="closeModalDirect()">×</button>
     </div>
     <div class="modal-meta" style="padding:24px">
       <div class="modal-title">${title}</div>
@@ -936,7 +1075,7 @@ function renderModalNoData(title, year, catIndex, err) {
           ${fw ? '█ WATCHED' : '· UNWATCHED'}
         </span>
         ${!allCategories.flatMap(c=>c.films).find(f=>normalizeTitle(f.title)===key)?.watched
-          ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw?'[ UNMARK ]':'[ MARK WATCHED ]'}</button>`
+          ? `<button class="modal-watch-btn" onclick="toggleSiteWatch('${key.replace(/'/g,"\\'")}');_doOpenModal('${title.replace(/'/g,"\\'")}',${year||'null'},${catIndex})">${fw?'Unmark watched':'Mark watched'}</button>`
           : ''}
       </div>
     </div>`;
@@ -972,7 +1111,7 @@ function renderStats() {
     catData.push({name: cat.subName||cat.name, desc: cat.desc||'', total: cat.films.length, watched: cw});
   });
 
-  const pct = Math.round(totalWatched/totalFilms*100);
+  const pct = totalFilms ? Math.round(totalWatched/totalFilms*100) : 0;
 
   // Stat readouts
   document.getElementById('stats-cards').innerHTML = [
@@ -998,7 +1137,7 @@ function renderStats() {
   decades.forEach(d => {
     const data = decadeMap[d];
     const p = data.total > 0 ? data.watched/data.total : 0;
-    const bg = p===0 ? 'var(--panel2)' : p<0.25 ? 'var(--lime-tint)' : p<0.5 ? '#cfe4bd' : p<0.75 ? 'var(--green)' : 'var(--green-dim)';
+    const bg = p===0 ? 'var(--paper-2)' : p<0.25 ? 'var(--lime-tint)' : p<0.5 ? '#cfe4bd' : p<0.75 ? 'var(--lime)' : 'var(--lime-dark)';
     hmHtml += `<div class="hm-cell" style="background:${bg}" title="${data.watched}/${data.total} in ${d}s">
       <span style="font-family:'Share Tech Mono';color:${p>=0.5?'#fff':'var(--txt-mid)'};font-weight:600;">${data.watched}</span>
     </div>`;
@@ -1170,7 +1309,11 @@ function filterByTime(picks) {
   return picks.filter(p => {
     const data = omdbCache.get(`${p.film.title}|${p.film.year||''}`);
     if (!data || !data.Runtime || data.Runtime==='N/A') return true;
-    const mins = parseInt(data.Runtime);
+    const hourMatch = data.Runtime.match(/(\d+)\s*h/i);
+    const minuteMatch = data.Runtime.match(/(\d+)\s*m/i);
+    const mins = hourMatch
+      ? parseInt(hourMatch[1], 10) * 60 + (minuteMatch ? parseInt(minuteMatch[1], 10) : 0)
+      : parseInt(data.Runtime, 10);
     return isNaN(mins) || mins <= sessionTime;
   });
 }
@@ -1178,8 +1321,8 @@ function filterByTime(picks) {
 function suggestRandom()  {
   let pool = filterByTime(getUnwatched());
   if (!pool.length) { showSuggestions([]); return; }
-  const picks = [];
-  for (let i=0;i<5;i++) picks.push(pool[Math.floor(Math.random()*pool.length)]);
+  const shuffled = [...pool].sort(() => Math.random() - .5);
+  const picks = shuffled.slice(0, Math.min(5, shuffled.length));
   showSuggestions(picks, 'RANDOM SELECTION');
 }
 function suggestByGap() {
@@ -1219,6 +1362,7 @@ function suggestOldest() {
 }
 
 function showSuggestions(picks, label='') {
+  selectedSuggestion = 0;
   if (!picks.length) {
     document.getElementById('suggestions').innerHTML = '<div class="empty-state">NO RECORDS MATCH CURRENT PARAMETERS.</div>';
     return;
