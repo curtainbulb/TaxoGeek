@@ -998,9 +998,9 @@ function renderStats() {
   decades.forEach(d => {
     const data = decadeMap[d];
     const p = data.total > 0 ? data.watched/data.total : 0;
-    const bg = p===0 ? '#0a0e14' : p<0.25 ? '#0a1a14' : p<0.5 ? '#0d2a1e' : p<0.75 ? 'var(--green-dim)' : 'var(--green)';
+    const bg = p===0 ? 'var(--panel2)' : p<0.25 ? 'var(--lime-tint)' : p<0.5 ? '#cfe4bd' : p<0.75 ? 'var(--green)' : 'var(--green-dim)';
     hmHtml += `<div class="hm-cell" style="background:${bg}" title="${data.watched}/${data.total} in ${d}s">
-      <span style="font-family:'Share Tech Mono';color:${p>0.6?'#000':'var(--txt-lo)'};">${data.watched}</span>
+      <span style="font-family:'Share Tech Mono';color:${p>=0.5?'#fff':'var(--txt-mid)'};font-weight:600;">${data.watched}</span>
     </div>`;
   });
   hmHtml += '</div>';
