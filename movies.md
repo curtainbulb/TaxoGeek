@@ -200,7 +200,6 @@ PSYCHOLOGICAL & CHAMBER DRAMA (Confined spaces, internal collapse, performance-d
 - [ ] Carnage (2011)
 - [ ] What Ever Happened to Baby Jane? (1962)
 - [ ] An Unmarried Woman (1978)
-- [ ] One Flew Over the Cuckoo’s Nest (1975)
 - [ ] Tokyo Story (1953)
 - [ ] Late Spring (1949)
 - [ ] The Bitter Tears of Petra von Kant (1972)
@@ -208,7 +207,6 @@ PSYCHOLOGICAL & CHAMBER DRAMA (Confined spaces, internal collapse, performance-d
 - [ ] Floating Weeds (1959)
 - [ ] An Autumn Afternoon (1962)
 - [ ] Early Summer (1951)
-- [ ] I Stand Alone (1998)
 - [ ] In the Company of Men (1997)
 
 AMERICAN COMEDY — Satirical & Irreverent (Genre parody, political satire, formal subversion)
@@ -1222,8 +1220,6 @@ EROTIC CINEMA — Art-House & Transgressive (Sexuality as formal or philosophica
 - [ ] Salò, or the 120 Days of Sodom (1975)
 - [x] The Handmaiden (2016)
 - [ ] Nymphomaniac Vol I (2013)
-- [ ] Henry & June (1990)
-- [ ] Sex and Lucia (2001)
 
 EROTIC CINEMA — Exploitation & Softcore (Primarily sexual content with minimal artistic ambition)
 
@@ -1460,7 +1456,6 @@ MUSICAL THEATRE & CLASSICAL MOVIE MUSICAL (Song-and-dance as primary narrative v
 - [ ] West Side Story (1961)
 - [ ] Grease (1978)
 - [ ] Coco (2017)
-- [ ] Les Parapluies de Cherbourg / The Umbrellas of Cherbourg (1964)
 - [ ] An American in Paris (1951)
 - [ ] The Sound of Music (1965)
 - [ ] Les Demoiselles de Rochefort (1967)
@@ -1468,7 +1463,6 @@ MUSICAL THEATRE & CLASSICAL MOVIE MUSICAL (Song-and-dance as primary narrative v
 - [ ] Round Midnight / Autour de minuit (1986)
 - [ ] Chicago (2002)
 - [ ] Chitty Chitty Bang Bang (1968)
-- [ ] Singin’ in the Rain (1952)
 - [ ] Willy Wonka & the Chocolate Factory (1971)
 - [ ] The Umbrellas of Cherbourg (1964)
 - [ ] Pinocchio (1940)
@@ -1547,10 +1541,9 @@ Documentaries
 - [ ] Barbarians Rising (2016) — The series examines major resistance movements against Rome and the pressures that eventually weakened the Roman Empire.
 - [ ] Hadrian's Wall: Edge of Empire — Documentary treatments examine Hadrian's Wall as a complex Roman frontier system of soldiers, settlements, supply networks, and economic infrastructure.
 - [ ] Mary Beard's Ultimate Rome: Empire Without Limit (2012) — Mary Beard examines the Roman Empire as a system of governance, law, culture, and provincial integration.
-- [ ] The Dark Ages: An Age of Light (2012) — Waldemar Januszczak argues that the centuries after Rome's fall were culturally and artistically creative rather than genuinely "dark."
+- [ ] The Dark Ages: An Age of Light (2012) — Waldemar Januszczak argues that the centuries after Rome's fall were culturally and artistically creative rather than genuinely "dark.
 - [ ] Empire of the Seas: How the Navy Forged the Modern World (2010) — Dan Snow examines the Royal Navy's organization, infrastructure, logistics, and role in building British global power.
 - [ ] The First Georgians: The German Kings Who Made Britain (2014) — Lucy Worsley explores the Hanoverian succession and the transformation of Britain's monarchy, court culture, and political institutions.
 - [ ] Building the Great Cathedrals (2010) — A NOVA documentary examines the engineering techniques that allowed medieval builders to construct massive Gothic cathedrals.
 - [ ] Seven Wonders of the Industrial World (2003) — A BBC series explores seven major Victorian engineering projects and the institutions, technology, and human effort behind them.
 - [ ] The Wright Stuff / First Flight — Documentary treatments explore the Wright brothers, the engineering of early aircraft, and the institutional context of the first powered flights.
- 
